@@ -13,6 +13,7 @@ import (
 	"restmodel"
 
 	"github.com/bwmarrin/snowflake"
+	"github.com/gorilla/mux"
 )
 
 var db = datasource.InitConnection()
@@ -96,6 +97,26 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(regResponse)
+}
+
+func GetNameHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	user, err := userService.ViewProfile(vars["usernameCalon"])
+
+	if err != nil {
+		log.Println("Cannot get User data", err)
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	nameResponse := restmodel.ResponseGetUser {
+		user.ID,
+		user.Name,
+		user.Tingkat,
+	}
+	json.NewEncoder(w).Encode(nameResponse)	
 }
 
 // func RegisterHandler(w http.ResponseWriter, r *http.Request) {

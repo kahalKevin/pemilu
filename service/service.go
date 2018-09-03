@@ -8,7 +8,7 @@ import (
 type UserService interface {
 	Login(username string, password string) (TokenData, error)
 	Register(userRegister repo.User, token string) (bool, error)
-	// ViewProfile(token string) (repo.User, error)
+	ViewProfile(username string) (repo.User, error)
 }
 
 var User UserService

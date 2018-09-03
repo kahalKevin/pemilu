@@ -266,24 +266,15 @@ func validateToken(token string) (tokenData Token, err error) {
 	return
 }
 
-// func (s *userService) ViewProfile(token string) (userProfile repo.User, err error) {
-// 	var id string
-// 	at(time.Unix(0, 0), func() {
-// 		tokenClaims, err := jwt.ParseWithClaims(token, &Token{}, func(tokenClaims *jwt.Token) (interface{}, error) {
-// 			return []byte("IDKWhatThisIs"), nil
-// 		})
+func (s *userService) ViewProfile(username string) (userProfile repo.User, err error) {
+	userProfile, err = s.userRepo.FindByUsername(username)
+	if err != nil {
+		log.Println("Error at finding user's profile,	", err)
+	}
 
-// 		if claims, _ := tokenClaims.Claims.(*Token); claims.ExpiresAt > time.Now().Unix() {
-// 			id = claims.StandardClaims.Subject
-// 			fmt.Println(claims.Role, claims.Subject)
-// 		} else {
-// 			fmt.Println("token Invalid,    ", err)
-// 		}
-// 	})
-
-// 	userProfile, err = s.userRepo.FindByID(id)
-// 	if err != nil {
-// 		log.Println("Error at finding user's profile,	", err)
-// 	}
-// 	return
-// }
+	if "theboss" == userProfile.Username {
+		userProfile = repo.User{}
+		err = errors.New("Can not access this User")
+	}
+	return
+}

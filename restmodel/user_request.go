@@ -19,6 +19,12 @@ type Response struct {
 	Tingkat   string `json:"tingkat"`
 }
 
+type ResponseGetUser struct {
+	IDCalon  string `json:"idCalon"`
+	Name     string `json:"name"`
+	Tingkat  string `json:"tingkat"`
+}
+
 type ResponseGeneral struct {
 	Result    bool   `json:"result"`	
 }
