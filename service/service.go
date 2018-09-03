@@ -7,7 +7,7 @@ import (
 // UserService will be implemented in user_service
 type UserService interface {
 	Login(username string, password string) (TokenData, error)
-	// Register(userRegister repo.User, role int) (bool, error)
+	Register(userRegister repo.User, token string) (bool, error)
 	// ViewProfile(token string) (repo.User, error)
 }
 

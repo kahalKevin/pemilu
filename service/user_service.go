@@ -22,7 +22,7 @@ type userService struct {
 // Token is a struct made to generate token
 type Token struct {
 	jwt.StandardClaims
-	ID        string `json:"idCalon"`
+	ID        string `json:id`
 	Username  string `json:"username"`
 	Role 	  string `json:"role"`
 	Tingkat   string `json:"tingkat"`
@@ -75,13 +75,10 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 		return
 	}
 
-	log.Println(userData.Password, password)
-
 	match := CheckPasswordHash(password, userData.Password)
 	if !match {
 		err = errors.New("invalid password")
 		log.Println("Wrong password")
-		// w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
@@ -94,7 +91,7 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 	claims := Token{
 		jwt.StandardClaims{
 			Subject:   userData.ID,
-			ExpiresAt: time.Now().Add(20 * time.Second).Unix(),
+			ExpiresAt: time.Now().AddDate(1, 0, 0).Unix(),
 		},
 		userData.ID,
 		userData.Username,
@@ -203,6 +200,71 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 
 // 	return
 // }
+
+func (s *userService) Register(userRegister repo.User, token string) (registered bool, err error) {
+	registered = false
+	if len(token) == 0 || len(userRegister.Username) == 0 {
+		err = errors.New("Must fill all field")
+		log.Println("Fill all field", err)
+		return
+	}
+
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+
+	if dataToken.Role != repo.ADMIN.String() {
+		err = errors.New("User dont have priviledges")
+		return
+	}
+
+	checkUsername, err := s.userRepo.FindByUsername(userRegister.Username)
+	if len(checkUsername.Username) != 0 {
+		log.Println("Username exist on another account,    ", err)
+		return
+	}
+
+	userRegister.Password, err = HashPassword(userRegister.Password)
+	if err != nil {
+		log.Println("Failed encrypting password,  ", err)
+		return
+	}
+
+	_, err = s.userRepo.InsertNewUser(userRegister)
+	if err != nil {
+		log.Println("Failed registering,    ", err)
+		return
+	} else {
+		registered = true
+	}
+
+	return
+}
+
+func validateToken(token string) (tokenData Token, err error) {
+	at(time.Unix(0, 0), func() {
+		tokenClaims, _ := jwt.ParseWithClaims(token, &Token{}, func(tokenClaims *jwt.Token) (interface{}, error) {
+			return []byte("IDKWhatThisIs"), nil
+		})
+
+		if claims, _ := tokenClaims.Claims.(*Token); claims.ExpiresAt > time.Now().Unix() {
+			id := claims.StandardClaims.Subject
+			tokenData = Token{
+				ID : id,
+				Username : claims.Username,
+				Role : claims.Role,
+				Tingkat : claims.Tingkat,
+			}
+			// fmt.Println(claims.Role, claims.Subject)
+		} else {
+			err = errors.New("token Invalid")
+			// fmt.Println("token Invalid", err)
+		}
+	})
+	return
+}
 
 // func (s *userService) ViewProfile(token string) (userProfile repo.User, err error) {
 // 	var id string

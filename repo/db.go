@@ -17,7 +17,7 @@ type userRepository struct {
 	findUsrnameStmt   *sqlx.Stmt
 	// findRoleStmt      *sqlx.Stmt
 	// findExactRoleStmt *sqlx.Stmt
-	// insertUser        *sqlx.NamedStmt
+	insertUser        *sqlx.NamedStmt
 	// insertToRole      *sqlx.NamedStmt
 }
 
@@ -50,7 +50,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
 	// r.findRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =?")
 	// r.findExactRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =? AND role=?")
-	// r.insertUser = r.MustPrepareNamedStmt("INSERT INTO user_auth (id, email, msisdn, username, password, status) VALUES (:id, :email, :msisdn, :username, :password, :status)")
+	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role) VALUES (:id, :name, :tingkat, :username, :password, :role)")
 	// r.insertToRole = r.MustPrepareNamedStmt("INSERT INTO user_role (id, user_id, role) VALUES (:id, :user_id, :role)")
 	return &r
 }
@@ -120,16 +120,16 @@ func (db *userRepository) FindByUsername(usrname string) (usr User, err error) {
 // 	return
 // }
 
-// func (db *userRepository) InsertNewUser(user User) (lastID string, err error) {
-// 	_, err = db.insertUser.Exec(user)
-// 	if err != nil {
-// 		log.Println("Error inserting new user,    ", err)
-// 	}
+func (db *userRepository) InsertNewUser(user User) (lastID string, err error) {
+	_, err = db.insertUser.Exec(user)
+	if err != nil {
+		log.Println("Error inserting new user,    ", err)
+	}
 
-// 	lastID = user.ID
+	lastID = user.ID
 
-// 	return
-// }
+	return
+}
 
 // func (db *userRepository) InsertToRole(newRole UserRole) (success bool, err error) {
 // 	_, err = db.insertToRole.Exec(newRole)

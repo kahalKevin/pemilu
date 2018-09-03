@@ -12,7 +12,7 @@ import (
 	"repo"
 	"restmodel"
 
-	// "github.com/bwmarrin/snowflake"
+	"github.com/bwmarrin/snowflake"
 )
 
 var db = datasource.InitConnection()
@@ -51,6 +51,51 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("token", loginResult.Token)
 	json.NewEncoder(w).Encode(loginResp)
+}
+
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	tokenHeader := r.Header.Get("token")
+	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
+
+	var addUserRequest restmodel.AddUserRequest
+	json.Unmarshal(body, &addUserRequest)
+
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		log.Println("Fail to generate snowflake id,    ", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	id := node.Generate().String()
+
+	userRegister := repo.User{
+		ID:        id,
+		Name:      addUserRequest.Name,
+		Tingkat:   addUserRequest.Tingkat,
+		Username:  addUserRequest.Username,
+		Password:  addUserRequest.Password,
+		Role:      repo.CALON.String(),
+	}
+
+	registerResult, err := userService.Register(userRegister, tokenHeader)
+	if err != nil {
+		log.Println("failed to register,    ", err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+
+	var regResponse restmodel.ResponseGeneral
+
+	if !registerResult {
+		regResponse.Result = false
+	} else {
+		regResponse.Result = true
+	}
+
+	json.NewEncoder(w).Encode(regResponse)
 }
 
 // func RegisterHandler(w http.ResponseWriter, r *http.Request) {

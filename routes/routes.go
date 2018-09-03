@@ -8,7 +8,8 @@ import (
 
 func Routes() *mux.Router {
 	route := mux.NewRouter()
-	route.HandleFunc("/login", handler.LoginHandler).Methods("POST")
+	route.HandleFunc("/pemilu/login", handler.LoginHandler).Methods("POST")
+	route.HandleFunc("/pemilu/addUser", handler.RegisterHandler).Methods("POST")
 	// route.HandleFunc("/register", handler.RegisterHandler).Methods("POST")
 	// route.HandleFunc("/viewprofile", handler.ProfileHandler).Methods("POST")
 	return route

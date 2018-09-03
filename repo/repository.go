@@ -9,6 +9,6 @@ type UserRepository interface {
 	FindByUsername(usrname string) (User, error)
 	// FindUserRole(userID string) (UserRole, error)
 	// FindExactRole(userID string, role int) (UserRole, error)
-	// InsertNewUser(user User) (string, error)
+	InsertNewUser(user User) (string, error)
 	// InsertToRole(userRole UserRole) (bool, error)
 }
