@@ -16,4 +16,5 @@ type UserRepository interface {
 	// FindExactRole(userID string, role int) (UserRole, error)
 	InsertNewUser(user User) (string, error)
 	// InsertToRole(userRole UserRole) (bool, error)
+	ConfirmDukungan(nik string, tingkat string) (bool, error)
 }

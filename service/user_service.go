@@ -189,6 +189,20 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 	return
 }
 
+func (s *userService) ConfirmDukungan(nik string, token string) (result bool, err error) {
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+	tingkat := dataToken.Tingkat
+	result, err = s.userRepo.ConfirmDukungan(nik, tingkat)
+	if err != nil {
+		log.Println("Error confirm dukungan,	", err)
+	}
+	return
+}
+
 func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token string) (success bool, err error) {
 	var idCalon string
 	var tingkat string

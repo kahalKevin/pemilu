@@ -176,3 +176,23 @@ func GetPendukungsHandler(w http.ResponseWriter, r *http.Request) {
 	user, _ := userService.GetPendukungs(tokenHeader)
 	json.NewEncoder(w).Encode(user)
 }
+
+func ConfirmPendukungHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	niks, _ := r.URL.Query()["nik"]
+	nik := niks[0]
+	result, _ := userService.ConfirmDukungan(nik, tokenHeader)
+	var addResponse restmodel.ResponseGeneral
+	addResponse.Result = result
+	json.NewEncoder(w).Encode(addResponse)
+}
+
+func GetPendukungHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
+
+}
