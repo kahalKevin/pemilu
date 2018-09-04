@@ -9,19 +9,20 @@ import (
 )
 
 type userRepository struct {
-	conn              *sqlx.DB
+	conn *sqlx.DB
 	// findAllStmt       *sqlx.Stmt
-	findIDStmt        *sqlx.Stmt
-	findAtDukungan    *sqlx.Stmt
-	findAtPendukung   *sqlx.Stmt
-	insertDukungan    *sqlx.NamedStmt
-	insertPendukung   *sqlx.NamedStmt
+	findIDStmt      *sqlx.Stmt
+	findAtDukungan  *sqlx.Stmt
+	findAtPendukung *sqlx.Stmt
+	insertDukungan  *sqlx.NamedStmt
+	insertPendukung *sqlx.NamedStmt
 	// findEmailStmt     *sqlx.Stmt
 	// findMsisdnStmt    *sqlx.Stmt
-	findUsrnameStmt   *sqlx.Stmt
+	findUsrnameStmt      *sqlx.Stmt
+	findPendukungByCalon *sqlx.Stmt
 	// findRoleStmt      *sqlx.Stmt
 	// findExactRoleStmt *sqlx.Stmt
-	insertUser        *sqlx.NamedStmt
+	insertUser *sqlx.NamedStmt
 	// insertToRole      *sqlx.NamedStmt
 }
 
@@ -54,6 +55,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	// r.findMsisdnStmt = r.MustPrepareStmt("SELECT * FROM user_auth WHERE msisdn=?")
 	// r.findEmailStmt = r.MustPrepareStmt("SELECT * FROM user_auth WHERE email=?")
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
+	r.findPendukungByCalon = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps from Pendukung p inner join Dukungan d on p.nik=d.nik where idCalon=?")
 	// r.findRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =?")
 	// r.findExactRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =? AND role=?")
 	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role) VALUES (:id, :name, :tingkat, :username, :password, :role)")
@@ -112,6 +114,14 @@ func (db *userRepository) FindByUsername(usrname string) (usr User, err error) {
 	return
 }
 
+func (db *userRepository) FindPendukungByCalon(idCalon string) (pendukungPart []PendukungPart, err error) {
+	err = db.findPendukungByCalon.Select(&pendukungPart, idCalon)
+	if err != nil {
+		log.Println("Error at finding pendukung by calon,    ", err)
+	}
+	return
+}
+
 // func (db *userRepository) FindUserRole(userID string) (userRole UserRole, err error) {
 // 	err = db.findRoleStmt.Get(&userRole, userID)
 // 	if err != nil {
@@ -143,7 +153,7 @@ func (db *userRepository) InsertDukungan(dukungan Dukungan) (success bool, err e
 	} else {
 		success = true
 	}
-	return	
+	return
 }
 
 func (db *userRepository) InsertPendukung(pendukung Pendukung) (success bool, err error) {
@@ -153,7 +163,7 @@ func (db *userRepository) InsertPendukung(pendukung Pendukung) (success bool, er
 	} else {
 		success = true
 	}
-	return	
+	return
 }
 
 func (db *userRepository) InsertNewUser(user User) (lastID string, err error) {

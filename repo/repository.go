@@ -11,6 +11,7 @@ type UserRepository interface {
 	// FindByEmail(email string) (User, error)
 	// FindByMsisdn(msisdn string) (User, error)
 	FindByUsername(usrname string) (User, error)
+	FindPendukungByCalon(idCalon string) ([]PendukungPart, error)
 	// FindUserRole(userID string) (UserRole, error)
 	// FindExactRole(userID string, role int) (UserRole, error)
 	InsertNewUser(user User) (string, error)

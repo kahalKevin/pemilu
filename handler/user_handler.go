@@ -1,18 +1,18 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"fmt"
-	"bytes"
 	"net/http"
 
-	"service"
 	"datasource"
 	"repo"
 	"restmodel"
+	"service"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/gorilla/mux"
@@ -78,12 +78,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	id := node.Generate().String()
 
 	userRegister := repo.User{
-		ID:        id,
-		Name:      addUserRequest.Name,
-		Tingkat:   addUserRequest.Tingkat,
-		Username:  addUserRequest.Username,
-		Password:  addUserRequest.Password,
-		Role:      repo.CALON.String(),
+		ID:       id,
+		Name:     addUserRequest.Name,
+		Tingkat:  addUserRequest.Tingkat,
+		Username: addUserRequest.Username,
+		Password: addUserRequest.Password,
+		Role:     repo.CALON.String(),
 	}
 
 	registerResult, err := userService.Register(userRegister, tokenHeader)
@@ -103,21 +103,22 @@ func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	vars := mux.Vars(r)
-	w.WriteHeader(http.StatusOK)
 
 	user, err := userService.ViewProfile(vars["usernameCalon"])
 
 	if err != nil {
 		log.Println("Cannot get User data", err)
 		w.WriteHeader(http.StatusNotFound)
+		return
 	}
 
-	nameResponse := restmodel.ResponseGetUser {
+	nameResponse := restmodel.ResponseGetUser{
 		user.ID,
 		user.Name,
 		user.Tingkat,
 	}
-	json.NewEncoder(w).Encode(nameResponse)	
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(nameResponse)
 }
 
 func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,41 +130,49 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	// 1 << 19 to make 512kb
 	threshold = 1 << 19
 	r.ParseMultipartForm(threshold)
-    file, handler, err := r.FormFile("uploadfile")
-    if err != nil {
-    	fmt.Println(err)
-        return
-    }
-    defer file.Close()
+	file, handler, err := r.FormFile("uploadfile")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
 
-    if handler.Size > threshold {
-    	w.WriteHeader(http.StatusNotAcceptable)
-    	return
-    }
+	if handler.Size > threshold {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
-	    w.WriteHeader(http.StatusNotAcceptable)
-	    return
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
 	}
 
 	isWitness := false
-	if "1" == r.Form["witness"][0]{
+	if "1" == r.Form["witness"][0] {
 		isWitness = true
 	}
 
-	addPendukungRequest := restmodel.AddPendukungRequest {
+	addPendukungRequest := restmodel.AddPendukungRequest{
 		r.Form["idcalon"][0],
 		r.Form["nik"][0],
 		r.Form["firstname"][0],
 		buf,
 		r.Form["phone"][0],
 		isWitness,
-		handler.Filename,		
+		handler.Filename,
 	}
 	addResult, _ := userService.AddPendukung(addPendukungRequest, tokenHeader)
 	var addResponse restmodel.ResponseGeneral
 	addResponse.Result = addResult
 
-	json.NewEncoder(w).Encode(addResponse)	
+	json.NewEncoder(w).Encode(addResponse)
+}
+
+func GetPendukungsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	user, _ := userService.GetPendukungs(tokenHeader)
+	json.NewEncoder(w).Encode(user)
 }

@@ -1,24 +1,24 @@
 package service
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"os"
-	"log"
-	"time"
 	"errors"
-	"strings"
+	"fmt"
 	"io/ioutil"
-	"bytes"
+	"log"
 	"net/http"
+	"os"
 	"repo"
 	"restmodel"
+	"strings"
+	"time"
 
 	"github.com/bwmarrin/snowflake"
 	"github.com/dgrijalva/jwt-go"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
@@ -27,15 +27,15 @@ type userService struct {
 
 type Token struct {
 	jwt.StandardClaims
-	ID        string `json:id`
-	Username  string `json:"username"`
-	Role 	  string `json:"role"`
-	Tingkat   string `json:"tingkat"`
+	ID       string `json:id`
+	Username string `json:"username"`
+	Role     string `json:"role"`
+	Tingkat  string `json:"tingkat"`
 }
 
 type TokenData struct {
-	Data   Token
-	Token  string
+	Data  Token
+	Token string
 }
 
 var mySigningKey []byte
@@ -106,7 +106,7 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 		return
 	}
 
-	tokenData = TokenData {
+	tokenData = TokenData{
 		claims,
 		token,
 	}
@@ -164,10 +164,10 @@ func validateToken(token string) (tokenData Token, err error) {
 		if claims, _ := tokenClaims.Claims.(*Token); claims.ExpiresAt > time.Now().Unix() {
 			id := claims.StandardClaims.Subject
 			tokenData = Token{
-				ID : id,
-				Username : claims.Username,
-				Role : claims.Role,
-				Tingkat : claims.Tingkat,
+				ID:       id,
+				Username: claims.Username,
+				Role:     claims.Role,
+				Tingkat:  claims.Tingkat,
 			}
 		} else {
 			err = errors.New("token Invalid")
@@ -193,14 +193,14 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	var idCalon string
 	var tingkat string
 	var dataToken Token
-	var errToken  error
+	var errToken error
 	autoConfirm := false
 	success = false
 	if "" == token {
 		idCalon = request.IDCalon
 		userProfile, _ := s.userRepo.FindByID(idCalon)
 		if len(userProfile.ID) <= 0 {
-			err =  errors.New("Error at finding user's profile")
+			err = errors.New("Error at finding user's profile")
 			log.Println("Error at finding user's profile,	", err)
 			return
 		}
@@ -217,7 +217,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	}
 
 	dukungan, err := s.userRepo.FindAtDukungan(request.NIK, tingkat)
-	if len(dukungan.ID)>0 {
+	if len(dukungan.ID) > 0 {
 		err = errors.New("already Registered")
 		return
 	}
@@ -225,9 +225,9 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	var pendukung repo.Pendukung
 	var newDukungan repo.Dukungan
 	pendukung, err = s.userRepo.FindAtPendukung(request.NIK)
-	if len(pendukung.ID)<=0 {
+	if len(pendukung.ID) <= 0 {
 		dataPendukung, _ := getSidalih3Data(request.NIK, request.Firstname)
-		if len(dataPendukung.NIK) <= 0{
+		if len(dataPendukung.NIK) <= 0 {
 			err = errors.New("NIK not registered at DPT")
 			return
 		}
@@ -238,7 +238,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 			log.Println(err)
 			return
 		}
-		generatedFileName  := ID.String() + "." + extension
+		generatedFileName := ID.String() + "." + extension
 		go s.insertPendukung(dataPendukung, request, generatedFileName)
 		go saveImage(request.Photo, generatedFileName)
 	}
@@ -251,7 +251,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	}
 	idSFDukungan := nodeDukungan.Generate().String()
 
-	newDukungan = repo.Dukungan {
+	newDukungan = repo.Dukungan{
 		idSFDukungan,
 		idCalon,
 		request.NIK,
@@ -269,25 +269,25 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	return
 }
 
-func saveImage(photo *bytes.Buffer, filename string){
+func saveImage(photo *bytes.Buffer, filename string) {
 	file := photo.Bytes()
-	f, err := os.OpenFile("./gbr/"+ filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile("./gbr/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
-	    fmt.Println(err)
-	    return
+		fmt.Println(err)
+		return
 	}
 	defer f.Close()
 	f.Write(file)
 }
 
-func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string){
+func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string) {
 	gender := false
 	if "L" == sidalih3Response.Gender {
 		gender = true
 	}
-	nodePendukung, _ := snowflake.NewNode(1)
+	nodePendukung, _ := snowflake.NewNode(2)
 	idSFPendukung := nodePendukung.Generate().String()
-	newPendukung := repo.Pendukung {
+	newPendukung := repo.Pendukung{
 		idSFPendukung,
 		sidalih3Response.Nama,
 		sidalih3Response.NIK,
@@ -308,7 +308,52 @@ func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Respons
 	log.Println(newPendukung, res)
 }
 
-func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidalih3Response, err error){
+func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
+	allPendukung.Data = make(map[string]restmodel.Site)
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+	idCalon := dataToken.ID
+	pendukungPart, errGetByCalon := s.userRepo.FindPendukungByCalon(idCalon)
+	if errGetByCalon != nil {
+		err = errGetByCalon
+		return
+	}
+	for _, part := range pendukungPart {
+		s := []string{part.Provinsi, part.Kabupaten, part.Kecamatan, part.Kelurahan, part.TPS}
+		pendukung := restmodel.Pendukung{
+			part.ID,
+			part.Name,
+			part.NIK,
+			part.Phone,
+			part.Witness,
+			part.Gender,
+			part.Status,
+		}
+		dataKey := strings.Join(s, ";")
+		if dataValue, ok := allPendukung.Data[dataKey]; !ok {
+			site := restmodel.Site{
+				part.Provinsi,
+				part.Kabupaten,
+				part.Kecamatan,
+				part.Kelurahan,
+				part.TPS,
+				[]restmodel.Pendukung{pendukung},
+			}
+			allPendukung.Data[dataKey] = site
+		} else {
+			listPendukung := dataValue.Pendukung
+			listPendukung = append(listPendukung, pendukung)
+			dataValue.Pendukung = listPendukung
+			allPendukung.Data[dataKey] = dataValue
+		}
+	}
+	return
+}
+
+func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidalih3Response, err error) {
 	sidalih3Request := restmodel.Sidalih3Request{
 		"search",
 		nik,
@@ -331,9 +376,9 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 	return
 }
 
-func getImageExtension(fileName string) (string, error){
+func getImageExtension(fileName string) (string, error) {
 	stringSeparated := strings.Split(fileName, ".")
-	lastElement := len(stringSeparated)-1
+	lastElement := len(stringSeparated) - 1
 	extension := make(map[string]bool)
 	extension["jpg"] = true
 	extension["png"] = true
@@ -341,7 +386,7 @@ func getImageExtension(fileName string) (string, error){
 
 	if _, ok := extension[stringSeparated[lastElement]]; !ok {
 		err := errors.New("extension Invalid")
-    	return "", err
+		return "", err
 	}
 
 	return stringSeparated[lastElement], nil

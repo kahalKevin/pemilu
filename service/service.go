@@ -12,6 +12,7 @@ type UserService interface {
 	ViewProfile(username string) (repo.User, error)
 	AddPendukung(request restmodel.AddPendukungRequest, token string) (bool, error)
 	insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string)
+	GetPendukungs(token string) (restmodel.GetAllPendukungResponse, error)
 }
 
 var User UserService
