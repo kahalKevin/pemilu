@@ -11,6 +11,7 @@ type UserService interface {
 	Register(userRegister repo.User, token string) (bool, error)
 	ViewProfile(username string) (repo.User, error)
 	AddPendukung(request restmodel.AddPendukungRequest, token string) (bool, error)
+	insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string)
 }
 
 var User UserService

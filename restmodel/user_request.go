@@ -15,12 +15,13 @@ type AddUserRequest struct {
 }
 
 type AddPendukungRequest struct {
-	IDCalon   string         `json:"idcalon"`
-	NIK       string  		 `json:"nik"`
-	Photo     *bytes.Buffer  `json:"photo"`
-	Phone     string  		 `json:"phone"`
-	Witness   bool    		 `json:"witness"`	
-	FileName  string
+	IDCalon    string         `json:"idcalon"`
+	NIK        string  		  `json:"nik"`
+	Firstname  string  		  `json:"firstname"`
+	Photo      *bytes.Buffer  `json:"photo"`
+	Phone      string  		  `json:"phone"`
+	Witness    bool    		  `json:"witness"`	
+	FileName   string
 }
 
 type Response struct {
@@ -49,3 +50,22 @@ type RegisterRequest struct {
 	Status   int    `json:"status"`
 	Role     int    `json:"role"`
 }
+
+type Sidalih3Request struct {
+	Command string `json:"cmd"`
+	NIK string `json:"nik"`
+	Nama string `json:"nama"`
+}
+
+type Sidalih3Response struct {
+	Nama string `json:"nama"`
+	NIK string `json:"nik"`
+	TPS string `json:"tps"`
+	Gender string `json:"jenis_kelamin"`
+	Kelurahan string `json:"kelurahan"`
+	Kecamatan string `json:"kecamatan"`
+	Kabupaten string `json:"kabupaten"`
+	Provinsi string `json:"provinsi"`
+}
+
+

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"bytes"
 	"net/http"
-	"service"
 
+	"service"
 	"datasource"
 	"repo"
 	"restmodel"
@@ -160,6 +160,7 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	addPendukungRequest := restmodel.AddPendukungRequest {
 		r.Form["idcalon"][0],
 		r.Form["nik"][0],
+		r.Form["firstname"][0],
 		buf,
 		r.Form["phone"][0],
 		isWitness,
@@ -167,67 +168,3 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	userService.AddPendukung(addPendukungRequest, tokenHeader)
 }
-
-// func RegisterHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	w.WriteHeader(http.StatusOK)
-
-// 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
-
-// 	var regRequest restmodel.RegisterRequest
-// 	json.Unmarshal(body, &regRequest)
-
-// 	node, err := snowflake.NewNode(1)
-// 	if err != nil {
-// 		log.Println("Fail to generate snowflake id,    ", err)
-// 		w.WriteHeader(http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	id := node.Generate().String()
-
-// 	userRegister := repo.User{
-// 		ID:       id,
-// 		Email:    regRequest.Email,
-// 		Msisdn:   regRequest.Msisdn,
-// 		Username: regRequest.Username,
-// 		Password: regRequest.Password,
-// 		Status:   0,
-// 	}
-
-// 	role := regRequest.Role
-
-// 	registerResult, err := userService.Register(userRegister, role)
-// 	if err != nil {
-// 		log.Println("failed to register,    ", err)
-// 		w.WriteHeader(http.StatusNotAcceptable)
-// 	}
-
-// 	var regResponse restmodel.Response
-
-// 	if !registerResult {
-// 		regResponse.Message = "Register failed"
-// 	} else {
-// 		regResponse.Message = "Register success"
-// 		json.NewEncoder(w).Encode(regResponse)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 	}
-
-// 	json.NewEncoder(w).Encode(regResponse)
-// }
-
-// func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-
-// 	tokenHeader := r.Header.Get("token")
-
-// 	profile, err := userService.ViewProfile(tokenHeader)
-// 	if err != nil {
-// 		log.Println("Failed to view profile,    ", err)
-// 		w.WriteHeader(401)
-// 	}
-
-// 	profile.Password = "secret"
-
-// 	json.NewEncoder(w).Encode(profile)
-// }

@@ -2,16 +2,20 @@ package service
 
 import (
 	"database/sql"
-	// "fmt"
+	"encoding/json"
+	"fmt"
+	"os"
 	"log"
 	"time"
 	"errors"
 	"strings"
-
+	"io/ioutil"
+	"bytes"
+	"net/http"
 	"repo"
 	"restmodel"
 
-	// "github.com/bwmarrin/snowflake"
+	"github.com/bwmarrin/snowflake"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 	"github.com/satori/go.uuid"
@@ -83,12 +87,6 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 		return
 	}
 
-	// loginRole, err := s.userRepo.FindExactRole(userData.ID, role)
-	// if len(loginRole.RoleID) == 0 {
-	// 	log.Println("User has no such role")
-	// 	return
-	// }
-
 	claims := Token{
 		jwt.StandardClaims{
 			Subject:   userData.ID,
@@ -114,93 +112,6 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 	}
 	return
 }
-
-// func (s *userService) Register(userRegister repo.User, role int) (registered bool, err error) {
-// 	registered = false
-
-// 	reEmail := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-// 	emailValid := reEmail.MatchString(userRegister.Email)
-// 	if !emailValid {
-// 		log.Println("Email format is not valid.")
-// 		return
-// 	}
-
-// 	checkEmail, err := s.userRepo.FindByEmail(userRegister.Email)
-// 	if len(checkEmail.Email) != 0 {
-// 		checkRole, err := s.userRepo.FindUserRole(checkEmail.ID)
-// 		if checkRole.Role == role {
-// 			registered = false
-// 			log.Println("User registered with an existing role,    ", err)
-// 			return registered, err
-// 		} else if userRegister.Username == checkEmail.Username {
-// 			node, err := snowflake.NewNode(1)
-// 			if err != nil {
-// 				fmt.Println("Fail to generate snowflake id,    ", err)
-// 				return registered, err
-// 			}
-
-// 			id := node.Generate().String()
-// 			newRole := repo.UserRole{
-// 				RoleID: id,
-// 				UserID: checkRole.UserID,
-// 				Role:   role,
-// 			}
-// 			registered, err = s.userRepo.InsertToRole(newRole)
-// 			return registered, err
-// 		}
-// 	}
-
-// 	checkUsername, err := s.userRepo.FindByUsername(userRegister.Username)
-// 	if len(checkUsername.Username) != 0 {
-// 		registered = false
-// 		log.Println("Username exist on another account,    ", err)
-// 		return
-// 	}
-
-// 	checkMsisdn, err := s.userRepo.FindByMsisdn(userRegister.Msisdn)
-// 	if len(checkMsisdn.Msisdn) != 0 {
-// 		registered = false
-// 		log.Println("Phone number exist on another account,   ", err)
-// 		return
-// 	}
-
-// 	userRegister.Password, err = HashPassword(userRegister.Password)
-// 	if err != nil {
-// 		log.Println("Failed encrypting password,  ", err)
-// 		return
-// 	}
-
-// 	_, err = s.userRepo.InsertNewUser(userRegister)
-// 	if err != nil {
-// 		log.Println("Failed registering,    ", err)
-// 		return
-// 	} else {
-// 		registered = true
-// 	}
-
-// 	node, err := snowflake.NewNode(1)
-// 	if err != nil {
-// 		fmt.Println("Failed generating snowflake id,    ", err)
-// 		return registered, err
-// 	}
-// 	id := node.Generate().String()
-
-// 	newInsertRole := repo.UserRole{
-// 		RoleID: id,
-// 		UserID: userRegister.ID,
-// 		Role:   role,
-// 	}
-
-// 	_, err = s.userRepo.InsertToRole(newInsertRole)
-// 	if err != nil {
-// 		log.Println("Failed registering new role by request,    ", err)
-// 		return
-// 	} else {
-// 		registered = true
-// 	}
-
-// 	return
-// }
 
 func (s *userService) Register(userRegister repo.User, token string) (registered bool, err error) {
 	registered = false
@@ -280,12 +191,20 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 
 func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token string) (success bool, err error) {
 	var idCalon string
+	var tingkat string
 	var dataToken Token
 	var errToken  error
 	autoConfirm := false
 	success = false
 	if "" == token {
 		idCalon = request.IDCalon
+		userProfile, _ := s.userRepo.FindByID(idCalon)
+		if len(userProfile.ID) <= 0 {
+			err =  errors.New("Error at finding user's profile")
+			log.Println("Error at finding user's profile,	", err)
+			return
+		}
+		tingkat = userProfile.Tingkat
 	} else {
 		dataToken, errToken = validateToken(token)
 		if errToken != nil {
@@ -293,30 +212,122 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 			return
 		}
 		idCalon = dataToken.ID
+		tingkat = dataToken.Tingkat
 		autoConfirm = true
 	}
-	
-	ID := uuid.Must(uuid.NewV4())
-	extension, err := getImageExtension(request.FileName)
-	if err != nil {
+
+	dukungan, err := s.userRepo.FindAtDukungan(request.NIK, tingkat)
+	if len(dukungan.ID)>0 {
+		err = errors.New("already Registered")
 		return
 	}
-	generatedFileName  := ID.String() + "." + extension
-	log.Println(dataToken.Username, generatedFileName, idCalon, autoConfirm)
 
+	var pendukung repo.Pendukung
+	var newDukungan repo.Dukungan
+	pendukung, err = s.userRepo.FindAtPendukung(request.NIK)
+	if len(pendukung.ID)<=0 {
+		dataPendukung, _ := getSidalih3Data(request.NIK, request.Firstname)
+		if len(dataPendukung.NIK) <= 0{
+			err = errors.New("NIK not registered at DPT")
+			return
+		}
+		ID := uuid.Must(uuid.NewV4())
+		extension, errImage := getImageExtension(request.FileName)
+		if errImage != nil {
+			err = errImage
+			log.Println(err)
+			return
+		}
+		generatedFileName  := ID.String() + "." + extension
+		go s.insertPendukung(dataPendukung, request, generatedFileName)
+		go saveImage(request.Photo, generatedFileName)
+	}
 
-// w.Write(buffer.Bytes())
+	nodeDukungan, errSFDukungan := snowflake.NewNode(1)
+	if errSFDukungan != nil {
+		err = errSFDukungan
+		fmt.Println("Failed generating snowflake id,    ", err)
+		return
+	}
+	idSFDukungan := nodeDukungan.Generate().String()
 
-// 	f, err := os.OpenFile("./gbr/"+ generatedFileName, os.O_WRONLY|os.O_CREATE, 0666)
-//     if err != nil {
-//     	fmt.Println(err)
-//     	return
-//     }
-//     defer f.Close()
-//     io.Copy(f, file)
+	newDukungan = repo.Dukungan {
+		idSFDukungan,
+		idCalon,
+		request.NIK,
+		tingkat,
+		autoConfirm,
+	}
+	res, errInsert := s.userRepo.InsertDukungan(newDukungan)
+	if err != nil {
+		err = errInsert
+		log.Println("Failed Insert Dukungan,    ", err)
+		return
+	}
+	log.Println(newDukungan, res)
+	success = true
+	return
+}
 
+func saveImage(photo *bytes.Buffer, filename string){
+	file := photo.Bytes()
+	f, err := os.OpenFile("./gbr/"+ filename, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+	    fmt.Println(err)
+	    return
+	}
+	defer f.Close()
+	f.Write(file)
+}
 
+func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string){
+	gender := false
+	if "L" == sidalih3Response.Gender {
+		gender = true
+	}
+	nodePendukung, _ := snowflake.NewNode(1)
+	idSFPendukung := nodePendukung.Generate().String()
+	newPendukung := repo.Pendukung {
+		idSFPendukung,
+		sidalih3Response.Nama,
+		sidalih3Response.NIK,
+		sidalih3Response.Provinsi,
+		sidalih3Response.Kabupaten,
+		sidalih3Response.Kecamatan,
+		sidalih3Response.Kelurahan,
+		sidalih3Response.TPS,
+		request.Phone,
+		request.Witness,
+		gender,
+		fileName,
+	}
+	res, errInsert := s.userRepo.InsertPendukung(newPendukung)
+	if errInsert != nil {
+		log.Println("Failed Insert Pendukung,    ", errInsert)
+	}
+	log.Println(newPendukung, res)
+}
 
+func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidalih3Response, err error){
+	sidalih3Request := restmodel.Sidalih3Request{
+		"search",
+		nik,
+		name,
+	}
+	reqJson, _ := json.Marshal(sidalih3Request)
+	req, _ := http.NewRequest("POST", "https://sidalih3.kpu.go.id/dppublik/dpsnik", bytes.NewBuffer(reqJson))
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := &http.Client{}
+	resp, errSidalih := client.Do(req)
+	if errSidalih != nil {
+		err = errSidalih
+		log.Println(err)
+		return
+	}
+	body, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	json.Unmarshal(body, &sidalih3Response)
 	return
 }
 
