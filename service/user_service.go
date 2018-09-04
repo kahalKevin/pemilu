@@ -350,6 +350,22 @@ func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Respons
 	log.Println(newPendukung, res)
 }
 
+func (s *userService) GetUsers(token string) (users []repo.UserPart, err error) {
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+
+	if dataToken.Role != repo.ADMIN.String() {
+		err = errors.New("User dont have priviledges")
+		return
+	}
+
+	users, err = s.userRepo.GetUsers()
+	return
+}
+
 func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
 	allPendukung.Data = make(map[string]restmodel.Site)
 	dataToken, errToken := validateToken(token)

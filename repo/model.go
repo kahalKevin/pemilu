@@ -62,3 +62,9 @@ type Dukungan struct {
 	Tingkat string `json:"tingkat" db:"tingkat"`
 	Status  bool   `json:"status" db:"status"`
 }
+
+type UserPart struct {
+	ID      string `json:"id" db:"id"`
+	Name    string `json:"name" db:"name"`
+	Tingkat string `json:"tingkat" db:"tingkat"`
+}

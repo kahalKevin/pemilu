@@ -214,3 +214,11 @@ func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
 	addResponse.Result = result
 	json.NewEncoder(w).Encode(addResponse)
 }
+
+func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	fullData, _ := userService.GetUsers(tokenHeader)
+	json.NewEncoder(w).Encode(fullData)
+}

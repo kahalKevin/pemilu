@@ -9,24 +9,19 @@ import (
 )
 
 type userRepository struct {
-	conn *sqlx.DB
-	// findAllStmt       *sqlx.Stmt
-	findIDStmt      *sqlx.Stmt
-	findAtDukungan  *sqlx.Stmt
-	findAtPendukung *sqlx.Stmt
-	insertDukungan  *sqlx.NamedStmt
-	insertPendukung *sqlx.NamedStmt
-	// findEmailStmt     *sqlx.Stmt
-	// findMsisdnStmt    *sqlx.Stmt
+	conn                 *sqlx.DB
+	findIDStmt           *sqlx.Stmt
+	findAtDukungan       *sqlx.Stmt
+	findAtPendukung      *sqlx.Stmt
+	insertDukungan       *sqlx.NamedStmt
+	insertPendukung      *sqlx.NamedStmt
 	findUsrnameStmt      *sqlx.Stmt
 	findPendukungByCalon *sqlx.Stmt
-	// findRoleStmt      *sqlx.Stmt
-	// findExactRoleStmt *sqlx.Stmt
-	insertUser *sqlx.NamedStmt
-	// insertToRole      *sqlx.NamedStmt
-	confirmDukungan  *sqlx.Stmt
-	deleteDukungan   *sqlx.Stmt
-	getPendukungFull *sqlx.Stmt
+	insertUser           *sqlx.NamedStmt
+	confirmDukungan      *sqlx.Stmt
+	deleteDukungan       *sqlx.Stmt
+	getPendukungFull     *sqlx.Stmt
+	getUsers             *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -51,24 +46,27 @@ func (db *userRepository) MustPrepareNamedStmt(query string) *sqlx.NamedStmt {
 func NewRepository(db *sqlx.DB) UserRepository {
 	log.Println("NEW USER REPOSITORY")
 	r := userRepository{conn: db}
-	// r.findAllStmt = r.MustPrepareStmt("SELECT * FROM user_auth")
 	r.findIDStmt = r.MustPrepareStmt("SELECT * FROM User WHERE id=?")
 	r.findAtDukungan = r.MustPrepareStmt("SELECT * FROM Dukungan WHERE nik =? AND tingkat=?")
 	r.findAtPendukung = r.MustPrepareStmt("SELECT * FROM Pendukung WHERE nik=?")
-	// r.findMsisdnStmt = r.MustPrepareStmt("SELECT * FROM user_auth WHERE msisdn=?")
-	// r.findEmailStmt = r.MustPrepareStmt("SELECT * FROM user_auth WHERE email=?")
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
 	r.findPendukungByCalon = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps from Pendukung p inner join Dukungan d on p.nik=d.nik where idCalon=?")
-	// r.findRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =?")
-	// r.findExactRoleStmt = r.MustPrepareStmt("SELECT * FROM user_role WHERE user_id =? AND role=?")
 	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role) VALUES (:id, :name, :tingkat, :username, :password, :role)")
 	r.insertDukungan = r.MustPrepareNamedStmt("INSERT INTO Dukungan (id, idCalon, nik, tingkat, status) VALUES (:id, :idCalon, :nik, :tingkat, :status)")
 	r.insertPendukung = r.MustPrepareNamedStmt("INSERT INTO Pendukung (id, name, nik, provinsi, kabupaten, kecamatan, kelurahan, tps, phone, witness, gender, photo) VALUES (:id, :name, :nik, :provinsi, :kabupaten, :kecamatan, :kelurahan, :tps, :phone, :witness, :gender, :photo)")
-	// r.insertToRole = r.MustPrepareNamedStmt("INSERT INTO user_role (id, user_id, role) VALUES (:id, :user_id, :role)")
 	r.confirmDukungan = r.MustPrepareStmt("UPDATE Dukungan SET status=true WHERE nik=? and tingkat=?")
 	r.deleteDukungan = r.MustPrepareStmt("DELETE FROM Dukungan WHERE nik=? and tingkat=?")
 	r.getPendukungFull = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, photo from Pendukung p inner join Dukungan d on p.nik=d.nik where p.nik=? and tingkat=?")
+	r.getUsers = r.MustPrepareStmt("select id, name, tingkat from User where id != 1")
 	return &r
+}
+
+func (db *userRepository) GetUsers() (users []UserPart, err error) {
+	err = db.getUsers.Select(&users)
+	if err != nil {
+		log.Println("Error at get all users part,    ", err)
+	}
+	return
 }
 
 func (db *userRepository) ConfirmDukungan(nik string, tingkat string) (success bool, err error) {
@@ -103,14 +101,6 @@ func (db *userRepository) GetPendukungFull(nik string, tingkat string) (pendukun
 	return
 }
 
-// func (db *userRepository) FindProfiles() (usr []User, err error) {
-// 	err = db.findAllStmt.Select(&usr)
-// 	if err != nil {
-// 		log.Println("Error at finding profiles,    ", err)
-// 	}
-// 	return
-// }
-
 func (db *userRepository) FindByID(id string) (usr User, err error) {
 	err = db.findIDStmt.Get(&usr, id)
 	if err != nil {
@@ -119,28 +109,6 @@ func (db *userRepository) FindByID(id string) (usr User, err error) {
 	}
 	return
 }
-
-// func (db *userRepository) FindByMsisdn(msisdn string) (usr User, err error) {
-// 	err = db.findMsisdnStmt.Get(&usr, msisdn)
-// 	if err != nil {
-// 		log.Println("Error at Finding phone number,    ", err)
-// 	}
-// 	return
-// }
-
-// func (db *userRepository) FindByEmail(email string) (usr User, err error) {
-// 	var user []User
-// 	err = db.findEmailStmt.Select(&user, email)
-// 	if err != nil {
-// 		log.Println("Error at finding email,    ", err)
-// 	}
-
-// 	if len(user) != 0 {
-// 		usr = user[0]
-// 	}
-
-// 	return
-// }
 
 func (db *userRepository) FindByUsername(usrname string) (usr User, err error) {
 	var u User
@@ -159,14 +127,6 @@ func (db *userRepository) FindPendukungByCalon(idCalon string) (pendukungPart []
 	}
 	return
 }
-
-// func (db *userRepository) FindUserRole(userID string) (userRole UserRole, err error) {
-// 	err = db.findRoleStmt.Get(&userRole, userID)
-// 	if err != nil {
-// 		log.Println("Error while finding user role,    ", err)
-// 	}
-// 	return
-// }
 
 func (db *userRepository) FindAtPendukung(nik string) (pendukung Pendukung, err error) {
 	err = db.findAtPendukung.Get(&pendukung, nik)
@@ -214,13 +174,3 @@ func (db *userRepository) InsertNewUser(user User) (lastID string, err error) {
 
 	return
 }
-
-// func (db *userRepository) InsertToRole(newRole UserRole) (success bool, err error) {
-// 	_, err = db.insertToRole.Exec(newRole)
-// 	if err != nil {
-// 		log.Println("Error inserting new role,    ", err)
-// 	} else {
-// 		success = true
-// 	}
-// 	return
-// }

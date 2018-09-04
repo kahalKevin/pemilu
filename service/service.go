@@ -16,6 +16,7 @@ type UserService interface {
 	ConfirmDukungan(nik string, token string) (bool, error)
 	DeleteDukungan(nik string, token string) (bool, error)
 	GetPendukungFull(nik string, token string) (repo.PendukungFull, error)
+	GetUsers(token string) ([]repo.UserPart, error)
 }
 
 var User UserService
