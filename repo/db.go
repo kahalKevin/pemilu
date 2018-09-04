@@ -24,8 +24,9 @@ type userRepository struct {
 	// findExactRoleStmt *sqlx.Stmt
 	insertUser *sqlx.NamedStmt
 	// insertToRole      *sqlx.NamedStmt
-	confirmDukungan *sqlx.Stmt
-	deleteDukungan  *sqlx.Stmt
+	confirmDukungan  *sqlx.Stmt
+	deleteDukungan   *sqlx.Stmt
+	getPendukungFull *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -66,6 +67,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	// r.insertToRole = r.MustPrepareNamedStmt("INSERT INTO user_role (id, user_id, role) VALUES (:id, :user_id, :role)")
 	r.confirmDukungan = r.MustPrepareStmt("UPDATE Dukungan SET status=true WHERE nik=? and tingkat=?")
 	r.deleteDukungan = r.MustPrepareStmt("DELETE FROM Dukungan WHERE nik=? and tingkat=?")
+	r.getPendukungFull = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, photo from Pendukung p inner join Dukungan d on p.nik=d.nik where p.nik=? and tingkat=?")
 	return &r
 }
 
@@ -90,6 +92,14 @@ func (db *userRepository) DeleteDukungan(nik string, tingkat string) (success bo
 	}
 	rowUpdated, _ := res.RowsAffected()
 	success = (rowUpdated > 0)
+	return
+}
+
+func (db *userRepository) GetPendukungFull(nik string, tingkat string) (pendukung PendukungFull, err error) {
+	err = db.getPendukungFull.Get(&pendukung, nik, tingkat)
+	if err != nil {
+		log.Println("Error at get Pendukung full,    ", err)
+	}
 	return
 }
 

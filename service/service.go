@@ -15,6 +15,7 @@ type UserService interface {
 	GetPendukungs(token string) (restmodel.GetAllPendukungResponse, error)
 	ConfirmDukungan(nik string, token string) (bool, error)
 	DeleteDukungan(nik string, token string) (bool, error)
+	GetPendukungFull(nik string, token string) (repo.PendukungFull, error)
 }
 
 var User UserService

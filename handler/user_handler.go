@@ -190,7 +190,13 @@ func ConfirmPendukungHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetPendukungHandler(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	niks, _ := r.URL.Query()["nik"]
+	nik := niks[0]
+	fullData, _ := userService.GetPendukungFull(nik, tokenHeader)
+	json.NewEncoder(w).Encode(fullData)
 }
 
 func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {

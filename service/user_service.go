@@ -217,6 +217,20 @@ func (s *userService) DeleteDukungan(nik string, token string) (result bool, err
 	return
 }
 
+func (s *userService) GetPendukungFull(nik string, token string) (full repo.PendukungFull, err error) {
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+	tingkat := dataToken.Tingkat
+	full, err = s.userRepo.GetPendukungFull(nik, tingkat)
+	if err != nil {
+		log.Println("Error get pendukung full,	", err)
+	}
+	return
+}
+
 func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token string) (success bool, err error) {
 	var idCalon string
 	var tingkat string
