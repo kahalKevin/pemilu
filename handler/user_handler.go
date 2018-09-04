@@ -194,5 +194,17 @@ func GetPendukungHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	niks, ok := r.URL.Query()["nik"]
+	if !ok {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	nik := niks[0]
+	result, _ := userService.DeleteDukungan(nik, tokenHeader)
+	var addResponse restmodel.ResponseGeneral
+	addResponse.Result = result
+	json.NewEncoder(w).Encode(addResponse)
 }

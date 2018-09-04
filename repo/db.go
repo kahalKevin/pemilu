@@ -25,6 +25,7 @@ type userRepository struct {
 	insertUser *sqlx.NamedStmt
 	// insertToRole      *sqlx.NamedStmt
 	confirmDukungan *sqlx.Stmt
+	deleteDukungan  *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -64,6 +65,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.insertPendukung = r.MustPrepareNamedStmt("INSERT INTO Pendukung (id, name, nik, provinsi, kabupaten, kecamatan, kelurahan, tps, phone, witness, gender, photo) VALUES (:id, :name, :nik, :provinsi, :kabupaten, :kecamatan, :kelurahan, :tps, :phone, :witness, :gender, :photo)")
 	// r.insertToRole = r.MustPrepareNamedStmt("INSERT INTO user_role (id, user_id, role) VALUES (:id, :user_id, :role)")
 	r.confirmDukungan = r.MustPrepareStmt("UPDATE Dukungan SET status=true WHERE nik=? and tingkat=?")
+	r.deleteDukungan = r.MustPrepareStmt("DELETE FROM Dukungan WHERE nik=? and tingkat=?")
 	return &r
 }
 
@@ -72,6 +74,18 @@ func (db *userRepository) ConfirmDukungan(nik string, tingkat string) (success b
 	if errDB != nil {
 		err = errDB
 		log.Println("Failed to confirm dukungan: ", err)
+		success = false
+	}
+	rowUpdated, _ := res.RowsAffected()
+	success = (rowUpdated > 0)
+	return
+}
+
+func (db *userRepository) DeleteDukungan(nik string, tingkat string) (success bool, err error) {
+	res, errDB := db.deleteDukungan.Exec(nik, tingkat)
+	if errDB != nil {
+		err = errDB
+		log.Println("Failed to delete dukungan: ", err)
 		success = false
 	}
 	rowUpdated, _ := res.RowsAffected()

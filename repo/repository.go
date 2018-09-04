@@ -17,4 +17,5 @@ type UserRepository interface {
 	InsertNewUser(user User) (string, error)
 	// InsertToRole(userRole UserRole) (bool, error)
 	ConfirmDukungan(nik string, tingkat string) (bool, error)
+	DeleteDukungan(nik string, tingkat string) (bool, error)
 }

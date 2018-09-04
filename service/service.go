@@ -14,6 +14,7 @@ type UserService interface {
 	insertPendukung(sidalih3Response restmodel.Sidalih3Response, request restmodel.AddPendukungRequest, fileName string)
 	GetPendukungs(token string) (restmodel.GetAllPendukungResponse, error)
 	ConfirmDukungan(nik string, token string) (bool, error)
+	DeleteDukungan(nik string, token string) (bool, error)
 }
 
 var User UserService
