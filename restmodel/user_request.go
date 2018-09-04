@@ -1,5 +1,7 @@
 package restmodel
 
+import "bytes"
+
 type LoginRequest struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -10,6 +12,15 @@ type AddUserRequest struct {
 	Tingkat   string `json:"tingkat"`
 	Username  string `json:"username"`
 	Password  string `json:"password"`
+}
+
+type AddPendukungRequest struct {
+	IDCalon   string         `json:"idcalon"`
+	NIK       string  		 `json:"nik"`
+	Photo     *bytes.Buffer  `json:"photo"`
+	Phone     string  		 `json:"phone"`
+	Witness   bool    		 `json:"witness"`	
+	FileName  string
 }
 
 type Response struct {

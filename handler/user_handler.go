@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"fmt"
+	"bytes"
 	"net/http"
 	"service"
 
@@ -21,6 +23,7 @@ var userService = service.NewUserService(repo.NewRepository(db))
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
 
@@ -56,6 +59,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(http.StatusOK)
 
 	tokenHeader := r.Header.Get("token")
@@ -100,8 +104,10 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetNameHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	vars := mux.Vars(r)
 	w.WriteHeader(http.StatusOK)
 
 	user, err := userService.ViewProfile(vars["usernameCalon"])
@@ -117,6 +123,49 @@ func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 		user.Tingkat,
 	}
 	json.NewEncoder(w).Encode(nameResponse)	
+}
+
+func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	tokenHeader := r.Header.Get("token")
+	var threshold int64
+	// 1 << 19 to make 512kb
+	threshold = 1 << 19
+	r.ParseMultipartForm(threshold)
+    file, handler, err := r.FormFile("uploadfile")
+    if err != nil {
+    	fmt.Println(err)
+        return
+    }
+    defer file.Close()
+
+    if handler.Size > threshold {
+    	w.WriteHeader(http.StatusNotAcceptable)
+    	return
+    }
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, file); err != nil {
+	    w.WriteHeader(http.StatusNotAcceptable)
+	    return
+	}
+
+	isWitness := false
+	if "1" == r.Form["witness"][0]{
+		isWitness = true
+	}
+
+	addPendukungRequest := restmodel.AddPendukungRequest {
+		r.Form["idcalon"][0],
+		r.Form["nik"][0],
+		buf,
+		r.Form["phone"][0],
+		isWitness,
+		handler.Filename,		
+	}
+	userService.AddPendukung(addPendukungRequest, tokenHeader)
 }
 
 // func RegisterHandler(w http.ResponseWriter, r *http.Request) {

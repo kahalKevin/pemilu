@@ -4,22 +4,23 @@ import (
 	"database/sql"
 	// "fmt"
 	"log"
-	// "regexp"
 	"time"
 	"errors"
+	"strings"
 
 	"repo"
+	"restmodel"
 
 	// "github.com/bwmarrin/snowflake"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/satori/go.uuid"
 )
 
 type userService struct {
 	userRepo repo.UserRepository
 }
 
-// Token is a struct made to generate token
 type Token struct {
 	jwt.StandardClaims
 	ID        string `json:id`
@@ -257,10 +258,8 @@ func validateToken(token string) (tokenData Token, err error) {
 				Role : claims.Role,
 				Tingkat : claims.Tingkat,
 			}
-			// fmt.Println(claims.Role, claims.Subject)
 		} else {
 			err = errors.New("token Invalid")
-			// fmt.Println("token Invalid", err)
 		}
 	})
 	return
@@ -277,4 +276,62 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 		err = errors.New("Can not access this User")
 	}
 	return
+}
+
+func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token string) (success bool, err error) {
+	var idCalon string
+	var dataToken Token
+	var errToken  error
+	autoConfirm := false
+	success = false
+	if "" == token {
+		idCalon = request.IDCalon
+	} else {
+		dataToken, errToken = validateToken(token)
+		if errToken != nil {
+			err = errToken
+			return
+		}
+		idCalon = dataToken.ID
+		autoConfirm = true
+	}
+	
+	ID := uuid.Must(uuid.NewV4())
+	extension, err := getImageExtension(request.FileName)
+	if err != nil {
+		return
+	}
+	generatedFileName  := ID.String() + "." + extension
+	log.Println(dataToken.Username, generatedFileName, idCalon, autoConfirm)
+
+
+// w.Write(buffer.Bytes())
+
+// 	f, err := os.OpenFile("./gbr/"+ generatedFileName, os.O_WRONLY|os.O_CREATE, 0666)
+//     if err != nil {
+//     	fmt.Println(err)
+//     	return
+//     }
+//     defer f.Close()
+//     io.Copy(f, file)
+
+
+
+	return
+}
+
+func getImageExtension(fileName string) (string, error){
+	stringSeparated := strings.Split(fileName, ".")
+	lastElement := len(stringSeparated)-1
+	extension := make(map[string]bool)
+	extension["jpg"] = true
+	extension["png"] = true
+	extension["jpeg"] = true
+
+	if _, ok := extension[stringSeparated[lastElement]]; !ok {
+		err := errors.New("extension Invalid")
+    	return "", err
+	}
+
+	return stringSeparated[lastElement], nil
 }
