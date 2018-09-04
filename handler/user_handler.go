@@ -93,12 +93,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var regResponse restmodel.ResponseGeneral
-
-	if !registerResult {
-		regResponse.Result = false
-	} else {
-		regResponse.Result = true
-	}
+	regResponse.Result = registerResult
 
 	json.NewEncoder(w).Encode(regResponse)
 }
@@ -166,5 +161,9 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 		isWitness,
 		handler.Filename,		
 	}
-	userService.AddPendukung(addPendukungRequest, tokenHeader)
+	addResult, _ := userService.AddPendukung(addPendukungRequest, tokenHeader)
+	var addResponse restmodel.ResponseGeneral
+	addResponse.Result = addResult
+
+	json.NewEncoder(w).Encode(addResponse)	
 }
