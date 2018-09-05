@@ -22,6 +22,7 @@ type userRepository struct {
 	deleteDukungan       *sqlx.Stmt
 	getPendukungFull     *sqlx.Stmt
 	getUsers             *sqlx.Stmt
+	changePassword       *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -58,7 +59,20 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.deleteDukungan = r.MustPrepareStmt("DELETE FROM Dukungan WHERE nik=? and tingkat=?")
 	r.getPendukungFull = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, photo from Pendukung p inner join Dukungan d on p.nik=d.nik where p.nik=? and tingkat=?")
 	r.getUsers = r.MustPrepareStmt("select id, name, tingkat from User where id != 1")
+	r.changePassword = r.MustPrepareStmt("UPDATE User SET password=? WHERE username=?")
 	return &r
+}
+
+func (db *userRepository) ChangePassword(username string, newPassword string) (success bool, err error) {
+	res, errDB := db.changePassword.Exec(newPassword, username)
+	if errDB != nil {
+		err = errDB
+		log.Println("Failed to changePassword: ", err)
+		success = false
+	}
+	rowUpdated, _ := res.RowsAffected()
+	success = (rowUpdated > 0)
+	return
 }
 
 func (db *userRepository) GetUsers() (users []UserPart, err error) {

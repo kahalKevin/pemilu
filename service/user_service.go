@@ -203,6 +203,33 @@ func (s *userService) ConfirmDukungan(nik string, token string) (result bool, er
 	return
 }
 
+func (s *userService) ChangePassword(token string, password string, newPassword string) (result bool, err error) {
+	result = false
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+
+	username := dataToken.Username
+
+	user, _ := s.userRepo.FindByUsername(username)
+	if len(user.Username) == 0 {
+		log.Println("Username not exist")
+		return
+	}
+
+	valid := CheckPasswordHash(password, user.Password)
+	if valid {
+		newPassword, _ = HashPassword(newPassword)
+		result, err = s.userRepo.ChangePassword(username, newPassword)
+		if err != nil {
+			log.Println("Error change password,	", err)
+		}
+	}
+	return
+}
+
 func (s *userService) DeleteDukungan(nik string, token string) (result bool, err error) {
 	dataToken, errToken := validateToken(token)
 	if errToken != nil {
@@ -435,9 +462,9 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 }
 
 func getImageExtension(fileName string) (string, error) {
-	if "" == fileName{
+	if "" == fileName {
 		err := errors.New("extension Invalid")
-		return "", err		
+		return "", err
 	}
 	stringSeparated := strings.Split(fileName, ".")
 	lastElement := len(stringSeparated) - 1

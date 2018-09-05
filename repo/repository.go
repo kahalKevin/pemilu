@@ -15,4 +15,5 @@ type UserRepository interface {
 	DeleteDukungan(nik string, tingkat string) (bool, error)
 	GetPendukungFull(nik string, tingkat string) (PendukungFull, error)
 	GetUsers() ([]UserPart, error)
+	ChangePassword(username string, newPassword string) (bool, error)
 }
