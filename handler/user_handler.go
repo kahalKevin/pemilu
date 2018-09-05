@@ -27,6 +27,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
 
+	var loginResp restmodel.Response
 	var loginReq restmodel.LoginRequest
 	err := json.Unmarshal(body, &loginReq)
 	if err != nil {
@@ -38,10 +39,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Failed at login,   ", err)
 		w.WriteHeader(http.StatusUnauthorized)
+		loginResp.Result = false
+		json.NewEncoder(w).Encode(loginResp)
 		return
 	}
-
-	var loginResp restmodel.Response
 
 	if len(loginResult.Token) == 0 {
 		loginResp.Result = false
@@ -96,6 +97,23 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	regResponse.Result = registerResult
 
 	json.NewEncoder(w).Encode(regResponse)
+}
+
+func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
+	var changePasswordReq restmodel.ChangePasswordRequest
+	err := json.Unmarshal(body, &changePasswordReq)
+	if err != nil {
+		log.Println("ERROR at unmarshal", err)
+		return
+	}
+	result, _ := userService.ChangePassword(tokenHeader, changePasswordReq.OldPassword, changePasswordReq.NewPassword)
+	var addResponse restmodel.ResponseGeneral
+	addResponse.Result = result
+	json.NewEncoder(w).Encode(addResponse)
 }
 
 func GetNameHandler(w http.ResponseWriter, r *http.Request) {
@@ -210,9 +228,9 @@ func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	nik := niks[0]
 	result, _ := userService.DeleteDukungan(nik, tokenHeader)
-	var addResponse restmodel.ResponseGeneral
-	addResponse.Result = result
-	json.NewEncoder(w).Encode(addResponse)
+	var delResponse restmodel.ResponseGeneral
+	delResponse.Result = result
+	json.NewEncoder(w).Encode(delResponse)
 }
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -221,4 +239,20 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	tokenHeader := r.Header.Get("token")
 	fullData, _ := userService.GetUsers(tokenHeader)
 	json.NewEncoder(w).Encode(fullData)
+}
+
+func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	idCalon, ok := r.URL.Query()["id"]
+	if !ok {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := idCalon[0]
+	result, _ := userService.DeleteUser(id, tokenHeader)
+	var delResponse restmodel.ResponseGeneral
+	delResponse.Result = result
+	json.NewEncoder(w).Encode(delResponse)
 }

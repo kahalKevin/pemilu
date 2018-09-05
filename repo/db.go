@@ -9,19 +9,22 @@ import (
 )
 
 type userRepository struct {
-	conn                 *sqlx.DB
-	findIDStmt           *sqlx.Stmt
-	findAtDukungan       *sqlx.Stmt
-	findAtPendukung      *sqlx.Stmt
-	insertDukungan       *sqlx.NamedStmt
-	insertPendukung      *sqlx.NamedStmt
-	findUsrnameStmt      *sqlx.Stmt
-	findPendukungByCalon *sqlx.Stmt
-	insertUser           *sqlx.NamedStmt
-	confirmDukungan      *sqlx.Stmt
-	deleteDukungan       *sqlx.Stmt
-	getPendukungFull     *sqlx.Stmt
-	getUsers             *sqlx.Stmt
+	conn                  *sqlx.DB
+	findIDStmt            *sqlx.Stmt
+	findAtDukungan        *sqlx.Stmt
+	findAtPendukung       *sqlx.Stmt
+	insertDukungan        *sqlx.NamedStmt
+	insertPendukung       *sqlx.NamedStmt
+	findUsrnameStmt       *sqlx.Stmt
+	findPendukungByCalon  *sqlx.Stmt
+	insertUser            *sqlx.NamedStmt
+	confirmDukungan       *sqlx.Stmt
+	deleteDukungan        *sqlx.Stmt
+	getPendukungFull      *sqlx.Stmt
+	getUsers              *sqlx.Stmt
+	changePassword        *sqlx.Stmt
+	deleteUser            *sqlx.Stmt
+	deleteDukunganByCalon *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -58,7 +61,46 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.deleteDukungan = r.MustPrepareStmt("DELETE FROM Dukungan WHERE nik=? and tingkat=?")
 	r.getPendukungFull = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, photo from Pendukung p inner join Dukungan d on p.nik=d.nik where p.nik=? and tingkat=?")
 	r.getUsers = r.MustPrepareStmt("select id, name, tingkat from User where id != 1")
+	r.changePassword = r.MustPrepareStmt("UPDATE User SET password=? WHERE username=?")
+	r.deleteUser = r.MustPrepareStmt("DELETE FROM User WHERE id=?")
+	r.deleteDukunganByCalon = r.MustPrepareStmt("DELETE FROM Dukungan WHERE idCalon=?")
 	return &r
+}
+
+func (db *userRepository) DeleteUser(idCalon string) (success bool, err error) {
+	res, errDB := db.deleteUser.Exec(idCalon)
+	if errDB != nil {
+		err = errDB
+		log.Println("Failed to delete User: ", err)
+		success = false
+	}
+	rowUpdated, _ := res.RowsAffected()
+	success = (rowUpdated > 0)
+	return
+}
+
+func (db *userRepository) DeleteDukunganByCalon(idCalon string) (success bool, err error) {
+	res, errDB := db.deleteDukunganByCalon.Exec(idCalon)
+	if errDB != nil {
+		err = errDB
+		log.Println("Failed to delete dukungan by calon: ", err)
+		success = false
+	}
+	rowUpdated, _ := res.RowsAffected()
+	success = (rowUpdated > 0)
+	return
+}
+
+func (db *userRepository) ChangePassword(username string, newPassword string) (success bool, err error) {
+	res, errDB := db.changePassword.Exec(newPassword, username)
+	if errDB != nil {
+		err = errDB
+		log.Println("Failed to changePassword: ", err)
+		success = false
+	}
+	rowUpdated, _ := res.RowsAffected()
+	success = (rowUpdated > 0)
+	return
 }
 
 func (db *userRepository) GetUsers() (users []UserPart, err error) {

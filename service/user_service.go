@@ -48,6 +48,8 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
+const urlImg string = ""
+
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
 	log.Println("NEW USER SERVICE")
@@ -203,6 +205,33 @@ func (s *userService) ConfirmDukungan(nik string, token string) (result bool, er
 	return
 }
 
+func (s *userService) ChangePassword(token string, password string, newPassword string) (result bool, err error) {
+	result = false
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+
+	username := dataToken.Username
+
+	user, _ := s.userRepo.FindByUsername(username)
+	if len(user.Username) == 0 {
+		log.Println("Username not exist")
+		return
+	}
+
+	valid := CheckPasswordHash(password, user.Password)
+	if valid {
+		newPassword, _ = HashPassword(newPassword)
+		result, err = s.userRepo.ChangePassword(username, newPassword)
+		if err != nil {
+			log.Println("Error change password,	", err)
+		}
+	}
+	return
+}
+
 func (s *userService) DeleteDukungan(nik string, token string) (result bool, err error) {
 	dataToken, errToken := validateToken(token)
 	if errToken != nil {
@@ -228,6 +257,7 @@ func (s *userService) GetPendukungFull(nik string, token string) (full repo.Pend
 	if err != nil {
 		log.Println("Error get pendukung full,	", err)
 	}
+	full.Photo = urlImg + full.Photo
 	return
 }
 
@@ -366,6 +396,23 @@ func (s *userService) GetUsers(token string) (users []repo.UserPart, err error) 
 	return
 }
 
+func (s *userService) DeleteUser(idCalon string, token string) (result bool, err error) {
+	result = false
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+	if dataToken.Role != repo.ADMIN.String() {
+		err = errors.New("User dont have priviledges")
+		return
+	}
+	s.userRepo.DeleteDukunganByCalon(idCalon)
+	s.userRepo.DeleteUser(idCalon)
+	result = true
+	return
+}
+
 func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
 	allPendukung.Data = make(map[string]restmodel.Site)
 	dataToken, errToken := validateToken(token)
@@ -435,9 +482,9 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 }
 
 func getImageExtension(fileName string) (string, error) {
-	if "" == fileName{
+	if "" == fileName {
 		err := errors.New("extension Invalid")
-		return "", err		
+		return "", err
 	}
 	stringSeparated := strings.Split(fileName, ".")
 	lastElement := len(stringSeparated) - 1
