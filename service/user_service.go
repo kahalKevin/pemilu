@@ -301,7 +301,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 		autoConfirm,
 	}
 	res, errInsert := s.userRepo.InsertDukungan(newDukungan)
-	if err != nil {
+	if errInsert != nil {
 		err = errInsert
 		log.Println("Failed Insert Dukungan,    ", err)
 		return
@@ -435,6 +435,10 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 }
 
 func getImageExtension(fileName string) (string, error) {
+	if "" == fileName{
+		err := errors.New("extension Invalid")
+		return "", err		
+	}
 	stringSeparated := strings.Split(fileName, ".")
 	lastElement := len(stringSeparated) - 1
 	extension := make(map[string]bool)
