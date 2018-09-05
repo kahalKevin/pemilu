@@ -48,6 +48,8 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
+const urlImg string = ""
+
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
 	log.Println("NEW USER SERVICE")
@@ -255,6 +257,7 @@ func (s *userService) GetPendukungFull(nik string, token string) (full repo.Pend
 	if err != nil {
 		log.Println("Error get pendukung full,	", err)
 	}
+	full.Photo = urlImg + full.Photo
 	return
 }
 
