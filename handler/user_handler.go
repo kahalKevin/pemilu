@@ -228,9 +228,9 @@ func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	nik := niks[0]
 	result, _ := userService.DeleteDukungan(nik, tokenHeader)
-	var addResponse restmodel.ResponseGeneral
-	addResponse.Result = result
-	json.NewEncoder(w).Encode(addResponse)
+	var delResponse restmodel.ResponseGeneral
+	delResponse.Result = result
+	json.NewEncoder(w).Encode(delResponse)
 }
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -239,4 +239,20 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	tokenHeader := r.Header.Get("token")
 	fullData, _ := userService.GetUsers(tokenHeader)
 	json.NewEncoder(w).Encode(fullData)
+}
+
+func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	tokenHeader := r.Header.Get("token")
+	idCalon, ok := r.URL.Query()["id"]
+	if !ok {
+		w.WriteHeader(http.StatusNotAcceptable)
+		return
+	}
+	id := idCalon[0]
+	result, _ := userService.DeleteUser(id, tokenHeader)
+	var delResponse restmodel.ResponseGeneral
+	delResponse.Result = result
+	json.NewEncoder(w).Encode(delResponse)
 }

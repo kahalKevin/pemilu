@@ -393,6 +393,23 @@ func (s *userService) GetUsers(token string) (users []repo.UserPart, err error) 
 	return
 }
 
+func (s *userService) DeleteUser(idCalon string, token string) (result bool, err error) {
+	result = false
+	dataToken, errToken := validateToken(token)
+	if errToken != nil {
+		err = errToken
+		return
+	}
+	if dataToken.Role != repo.ADMIN.String() {
+		err = errors.New("User dont have priviledges")
+		return
+	}
+	s.userRepo.DeleteDukunganByCalon(idCalon)
+	s.userRepo.DeleteUser(idCalon)
+	result = true
+	return
+}
+
 func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
 	allPendukung.Data = make(map[string]restmodel.Site)
 	dataToken, errToken := validateToken(token)
