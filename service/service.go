@@ -17,6 +17,8 @@ type UserService interface {
 	DeleteDukungan(nik string, token string) (bool, error)
 	GetPendukungFull(nik string, token string) (repo.PendukungFull, error)
 	GetUsers(token string) ([]repo.UserPart, error)
+	ChangePassword(token string, password string, newPassword string) (bool, error)
+	DeleteUser(idCalon string, token string) (bool, error)
 }
 
 var User UserService
