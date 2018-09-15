@@ -54,6 +54,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		loginResp.Tingkat = loginResult.Data.Tingkat
 	}
 
+	w.Header().Set("Access-Control-Expose-Headers", "token")
 	w.Header().Set("token", loginResult.Token)
 	json.NewEncoder(w).Encode(loginResp)
 }
