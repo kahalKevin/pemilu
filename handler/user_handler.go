@@ -23,8 +23,10 @@ var userService = service.NewUserService(repo.NewRepository(db))
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
 
@@ -62,8 +64,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 
 	tokenHeader := r.Header.Get("token")
@@ -104,9 +109,11 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")	
-	
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}	
+
 	tokenHeader := r.Header.Get("token")
 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
 	var changePasswordReq restmodel.ChangePasswordRequest
@@ -123,8 +130,10 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	vars := mux.Vars(r)
 
@@ -147,8 +156,10 @@ func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 
 func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
 
 	tokenHeader := r.Header.Get("token")
 	var threshold int64
@@ -196,8 +207,11 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetPendukungsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	tokenHeader := r.Header.Get("token")
 	user, _ := userService.GetPendukungs(tokenHeader)
 	json.NewEncoder(w).Encode(user)
@@ -205,8 +219,11 @@ func GetPendukungsHandler(w http.ResponseWriter, r *http.Request) {
 
 func ConfirmPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	tokenHeader := r.Header.Get("token")
 	niks, _ := r.URL.Query()["nik"]
 	nik := niks[0]
@@ -218,8 +235,11 @@ func ConfirmPendukungHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	tokenHeader := r.Header.Get("token")
 	niks, _ := r.URL.Query()["nik"]
 	nik := niks[0]
@@ -229,8 +249,11 @@ func GetPendukungHandler(w http.ResponseWriter, r *http.Request) {
 
 func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	tokenHeader := r.Header.Get("token")
 	niks, ok := r.URL.Query()["nik"]
 	if !ok {
@@ -246,8 +269,11 @@ func DeletePendukungHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
 	tokenHeader := r.Header.Get("token")
 	fullData, _ := userService.GetUsers(tokenHeader)
 	json.NewEncoder(w).Encode(fullData)
@@ -255,8 +281,11 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+	
 	tokenHeader := r.Header.Get("token")
 	idCalon, ok := r.URL.Query()["id"]
 	if !ok {
@@ -268,4 +297,10 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	var delResponse restmodel.ResponseGeneral
 	delResponse.Result = result
 	json.NewEncoder(w).Encode(delResponse)
+}
+
+func setupResponse(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+    (*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+    (*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token")
 }
