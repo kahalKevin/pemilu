@@ -74,13 +74,14 @@ type Sidalih3Response struct {
 }
 
 type Pendukung struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	NIK     string `json:"nik"`
-	Phone   string `json:"phone"`
-	Witness bool   `json:"witness"`
-	Gender  bool   `json:"gender"`
-	Status  bool   `json:"status"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	NIK       string `json:"nik"`
+	Phone     string `json:"phone"`
+	Witness   bool   `json:"witness"`
+	Gender    bool   `json:"gender"`
+	Status    bool   `json:"status"`
+	Timestamp string `json:"timestamp"`
 }
 
 type Site struct {

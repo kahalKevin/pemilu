@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	route := routes.Routes()
 
 	http.Handle("/", route)
