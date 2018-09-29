@@ -20,8 +20,6 @@ func Routes() *mux.Router {
 	route.HandleFunc("/pemilu/deletePendukung", handler.DeletePendukungHandler).Methods("DELETE")
 	route.HandleFunc("/pemilu/{usernameCalon}", handler.GetNameHandler).Methods("GET")
 
-
-
 	route.HandleFunc("/pemilu/login", handler.LoginHandler).Methods("OPTIONS")
 	route.HandleFunc("/pemilu/addUser", handler.RegisterHandler).Methods("OPTIONS")
 	route.HandleFunc("/pemilu/addPendukung", handler.AddPendukungHandler).Methods("OPTIONS")

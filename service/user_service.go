@@ -12,6 +12,7 @@ import (
 	"os"
 	"repo"
 	"restmodel"
+	"strconv"
 	"strings"
 	"time"
 
@@ -322,6 +323,8 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 		return
 	}
 	idSFDukungan := nodeDukungan.Generate().String()
+	t := time.Now().Unix()
+	timestamp := strconv.FormatInt(t, 10)
 
 	newDukungan = repo.Dukungan{
 		idSFDukungan,
@@ -329,6 +332,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 		request.NIK,
 		tingkat,
 		autoConfirm,
+		timestamp,
 	}
 	res, errInsert := s.userRepo.InsertDukungan(newDukungan)
 	if errInsert != nil {
@@ -436,6 +440,7 @@ func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAll
 			part.Witness,
 			part.Gender,
 			part.Status,
+			part.Timestamp,
 		}
 		dataKey := strings.Join(s, ";")
 		if dataValue, ok := allPendukung.Data[dataKey]; !ok {
