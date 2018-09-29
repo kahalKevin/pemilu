@@ -112,7 +112,7 @@ func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
 	setupResponse(&w)
 	if (*r).Method == "OPTIONS" {
 		return
-	}	
+	}
 
 	tokenHeader := r.Header.Get("token")
 	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
@@ -285,7 +285,7 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	if (*r).Method == "OPTIONS" {
 		return
 	}
-	
+
 	tokenHeader := r.Header.Get("token")
 	idCalon, ok := r.URL.Query()["id"]
 	if !ok {
@@ -301,6 +301,6 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func setupResponse(w *http.ResponseWriter) {
 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-    (*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
-    (*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token")
+	(*w).Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, token")
 }

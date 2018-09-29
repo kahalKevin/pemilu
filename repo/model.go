@@ -53,14 +53,16 @@ type PendukungPart struct {
 	Kecamatan string `json:"kecamatan" db:"kecamatan"`
 	Kelurahan string `json:"kelurahan" db:"kelurahan"`
 	TPS       string `json:"tps" db:"tps"`
+	Timestamp string `json:"timestamp" db:"timestamp"`
 }
 
 type Dukungan struct {
-	ID      string `json:"id" db:"id"`
-	IDCalon string `json:"idCalon" db:"idCalon"`
-	NIK     string `json:"nik" db:"nik"`
-	Tingkat string `json:"tingkat" db:"tingkat"`
-	Status  bool   `json:"status" db:"status"`
+	ID        string `json:"id" db:"id"`
+	IDCalon   string `json:"idCalon" db:"idCalon"`
+	NIK       string `json:"nik" db:"nik"`
+	Tingkat   string `json:"tingkat" db:"tingkat"`
+	Status    bool   `json:"status" db:"status"`
+	Timestamp string `json:"timestamp" db:"timestamp"`
 }
 
 type UserPart struct {
