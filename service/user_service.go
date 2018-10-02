@@ -473,13 +473,43 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 	req, _ := http.NewRequest("POST", "https://sidalih3.kpu.go.id/dppublik/dpsnik", bytes.NewBuffer(reqJson))
 	req.Header.Set("Accept", "application/json, text/plain, */*")
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
-	client := &http.Client{}
+	
+	clientReal := &http.Client{}
+	client := &http.Client{
+		CheckRedirect: func() func(req *http.Request, via []*http.Request) error {
+			redirects := 0
+			return func(req *http.Request, via []*http.Request) error {
+				if redirects > 1 {
+					return errors.New("stopped after 1 redirects")
+				}
+				redirects++
+				return nil
+			}
+		}(),
+	}
+
 	resp, errSidalih := client.Do(req)
+	if errSidalih != nil {
+		var cookieName string
+		for _, cookie := range resp.Cookies() {
+		  cookieName = cookie.Name
+		  cookie := http.Cookie{Name: cookie.Name, Value: cookie.Value}
+		  req.AddCookie(&cookie)
+		}
+		egovCookie, _ := req.Cookie(cookieName)
+		if egovCookie == nil {
+			err = errSidalih
+			log.Println(err)
+			return
+		}
+	}
+	resp, errSidalih = clientReal.Do(req)
 	if errSidalih != nil {
 		err = errSidalih
 		log.Println(err)
 		return
 	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	json.Unmarshal(body, &sidalih3Response)
