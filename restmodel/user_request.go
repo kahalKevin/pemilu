@@ -96,3 +96,20 @@ type Site struct {
 type GetAllPendukungResponse struct {
 	Data map[string]Site `json:"data"`
 }
+
+type LindungiHPMData struct {
+    TPS         string `json:"tps"`
+    KabKota     string `json:"namaKabKota"`
+    Kecamatan   string `json:"namaKecamatan"`
+    Kelurahan   string `json:"namaKelurahan"`
+    Nik         string `json:"nik"`
+    Nama        string `json:"nama"`
+    TempatLahir string `json:"tempat_lahir"`
+    Sex         string `json:"jenis_kelamin"`
+    Provinsi    string `json:"namaPropinsi"`
+}
+
+type LindungiHPMResponse struct {
+    Message    string          `json:"message"`
+    Data       LindungiHPMData `json:"data"`
+}

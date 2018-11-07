@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+    "net/url"	
 	"os"
+	"crypto/tls"
 	"repo"
 	"restmodel"
 	"strconv"
@@ -299,7 +301,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 	var newDukungan repo.Dukungan
 	pendukung, err = s.userRepo.FindAtPendukung(request.NIK)
 	if len(pendukung.ID) <= 0 {
-		dataPendukung, _ := getSidalih3Data(request.NIK, request.Firstname)
+		dataPendukung, _ := pemiluDataAggregate(request.NIK, request.Firstname)
 		if len(dataPendukung.NIK) <= 0 {
 			err = errors.New("NIK not registered at DPT")
 			return
@@ -534,4 +536,124 @@ func getImageExtension(fileName string) (string, error) {
 	}
 
 	return stringSeparated[lastElement], nil
+}
+
+func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidalih3Response, err error) {
+    dataResponse, err = getLPHMquick(nik)
+    if(err!=nil){
+        dataResponse, err = getLHPMdata(nik, name)
+        if(err!=nil){
+            err = errors.New("fail call LHPM")
+            return
+        } else {
+            return
+        }
+    } else {
+        return
+    }
+}
+
+func getLPHMquick (nik string) (dataResponse restmodel.Sidalih3Response, err error) {
+    apiUrl := "https://kmbmicro.xyz"
+    resource := "experiment/pemilu2019.php/"    
+    u, _ := url.ParseRequestURI(apiUrl)
+    u.Path = resource
+    urlStr := u.String()
+
+    client := &http.Client{}   
+
+    req, _ := http.NewRequest("GET", urlStr, nil)
+
+    q := req.URL.Query()
+    q.Add("nik", nik)
+    req.URL.RawQuery = q.Encode()
+
+    resp, err := client.Do(req)
+    defer resp.Body.Close()    
+    if(err!=nil){
+        return
+    }
+    var respData restmodel.LindungiHPMResponse
+    body, _ := ioutil.ReadAll(resp.Body)
+    json.Unmarshal(body, &respData)
+    if(respData.Message != "success"){
+        err = errors.New("fail call LHPM")
+        return
+    } else {
+        dataResponse.NIK = nik
+        dataResponse.Nama = respData.Data.Nama
+        dataResponse.TPS = respData.Data.TPS
+        dataResponse.Gender = respData.Data.Sex
+        dataResponse.Kelurahan = respData.Data.Kelurahan
+        dataResponse.Kecamatan = respData.Data.Kecamatan
+        dataResponse.Kabupaten = respData.Data.KabKota
+        dataResponse.Provinsi = respData.Data.Provinsi
+        fmt.Println("GET FROM kmbmicro.xyz")
+    }
+    return
+}
+
+
+func getLHPMdata(nik string, name string) (dataResponse restmodel.Sidalih3Response, err error) {
+    apiUrl := "https://lindungihakpilihmu.kpu.go.id"
+    resource := "/index.php/dpt/proses_ceknik/"
+    data := url.Values{}
+    data.Set("nik", nik)
+    data.Add("nama", name)
+
+    failedSign := "message:failed"
+    dataSign := "data:{"
+    u, _ := url.ParseRequestURI(apiUrl)
+    u.Path = resource
+    urlStr := u.String()
+
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+    client := &http.Client{Transport: tr}   
+
+    r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
+    r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+    r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+    resp, err := client.Do(r)
+    defer resp.Body.Close()    
+    if(err!=nil){
+        return
+    }
+
+    body, _ := ioutil.ReadAll(resp.Body)
+    bodyString := string(body)
+    bodyString = strings.Replace(bodyString, "\\\"", "", -1)
+    bodyString = strings.Replace(bodyString, "\\", "", -1)
+    bodyString = strings.Replace(bodyString, "\"", "", -1)
+    if(strings.Contains(bodyString, failedSign)){
+        err = errors.New("fail call LHPM")
+        return
+    } else {
+        i := strings.Index(bodyString, dataSign) + 6
+        data := bodyString[i:len(bodyString)-2]
+        dataArray := strings.Split(data, ",")
+        dataResponse.NIK = nik
+        for _, part := range dataArray {
+            content := strings.Split(part, ":")
+            if("nama" == content[0]){
+                dataResponse.Nama = content[1]
+            } else if("tps" == content[0]){
+                dataResponse.TPS = content[1]
+            } else if("jenis_kelamin" == content[0]){
+                dataResponse.Gender = content[1]
+            } else if("namaKelurahan" == content[0]){
+                dataResponse.Kelurahan = content[1]
+            } else if("namaKecamatan" == content[0]){
+                dataResponse.Kecamatan = content[1]
+            } else if("namaKabKota" == content[0]){
+                dataResponse.Kabupaten = content[1]
+            } else if("namaPropinsi" == content[0]){
+                dataResponse.Provinsi = content[1]
+            }
+        }
+        fmt.Println("GET FROM lindungihakpilihmu.kpu.go.id")
+    }
+    return
 }
