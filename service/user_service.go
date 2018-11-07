@@ -336,13 +336,12 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 		autoConfirm,
 		timestamp,
 	}
-	res, errInsert := s.userRepo.InsertDukungan(newDukungan)
+	_, errInsert := s.userRepo.InsertDukungan(newDukungan)
 	if errInsert != nil {
 		err = errInsert
 		log.Println("Failed Insert Dukungan,    ", err)
 		return
 	}
-	log.Println(newDukungan, res)
 	success = true
 	return
 }
@@ -379,11 +378,10 @@ func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Respons
 		gender,
 		fileName,
 	}
-	res, errInsert := s.userRepo.InsertPendukung(newPendukung)
+	_, errInsert := s.userRepo.InsertPendukung(newPendukung)
 	if errInsert != nil {
 		log.Println("Failed Insert Pendukung,    ", errInsert)
 	}
-	log.Println(newPendukung, res)
 }
 
 func (s *userService) GetUsers(token string) (users []repo.UserPart, err error) {
@@ -539,21 +537,33 @@ func getImageExtension(fileName string) (string, error) {
 }
 
 func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidalih3Response, err error) {
-    dataResponse, err = getLPHMquick(nik)
-    if(err!=nil){
-        dataResponse, err = getLHPMdata(nik, name)
-        if(err!=nil){
-            err = errors.New("fail call LHPM")
-            return
-        } else {
+    fail := make(chan uint32, 2)
+    success := make(chan restmodel.Sidalih3Response, 1)
+
+    go getLPHMquick(nik, fail, success)
+    go getLHPMdata(nik, name, fail, success)
+
+    var failCount uint32
+    failCount = 0
+    for {
+        select {
+        case doom := <-fail:
+            failCount = failCount + doom
+            if(failCount == 2){
+            	err = errors.New("fail call LHPM")
+                return
+            }
+        case bless := <-success:
+        	dataResponse = bless
             return
         }
-    } else {
-        return
     }
 }
 
-func getLPHMquick (nik string) (dataResponse restmodel.Sidalih3Response, err error) {
+func getLPHMquick (nik string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
+	defer elapsed("getLPHMquick")()	
+	var dataResponse restmodel.Sidalih3Response
+	var err error
     apiUrl := "https://kmbmicro.xyz"
     resource := "experiment/pemilu2019.php/"    
     u, _ := url.ParseRequestURI(apiUrl)
@@ -571,13 +581,14 @@ func getLPHMquick (nik string) (dataResponse restmodel.Sidalih3Response, err err
     resp, err := client.Do(req)
     defer resp.Body.Close()    
     if(err!=nil){
+    	fail <- 1
         return
     }
     var respData restmodel.LindungiHPMResponse
     body, _ := ioutil.ReadAll(resp.Body)
     json.Unmarshal(body, &respData)
     if(respData.Message != "success"){
-        err = errors.New("fail call LHPM")
+        fail <- 1
         return
     } else {
         dataResponse.NIK = nik
@@ -590,11 +601,14 @@ func getLPHMquick (nik string) (dataResponse restmodel.Sidalih3Response, err err
         dataResponse.Provinsi = respData.Data.Provinsi
         fmt.Println("GET FROM kmbmicro.xyz")
     }
-    return
+    success <- dataResponse
 }
 
 
-func getLHPMdata(nik string, name string) (dataResponse restmodel.Sidalih3Response, err error) {
+func getLHPMdata(nik string, name string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
+	defer elapsed("getLHPMdata")()
+	var dataResponse restmodel.Sidalih3Response
+	var err error
     apiUrl := "https://lindungihakpilihmu.kpu.go.id"
     resource := "/index.php/dpt/proses_ceknik/"
     data := url.Values{}
@@ -619,6 +633,7 @@ func getLHPMdata(nik string, name string) (dataResponse restmodel.Sidalih3Respon
     resp, err := client.Do(r)
     defer resp.Body.Close()    
     if(err!=nil){
+    	fail <- 1
         return
     }
 
@@ -628,7 +643,7 @@ func getLHPMdata(nik string, name string) (dataResponse restmodel.Sidalih3Respon
     bodyString = strings.Replace(bodyString, "\\", "", -1)
     bodyString = strings.Replace(bodyString, "\"", "", -1)
     if(strings.Contains(bodyString, failedSign)){
-        err = errors.New("fail call LHPM")
+        fail <- 1
         return
     } else {
         i := strings.Index(bodyString, dataSign) + 6
@@ -655,5 +670,12 @@ func getLHPMdata(nik string, name string) (dataResponse restmodel.Sidalih3Respon
         }
         fmt.Println("GET FROM lindungihakpilihmu.kpu.go.id")
     }
-    return
+    success <- dataResponse
+}
+
+func elapsed(what string) func() {
+    start := time.Now()
+    return func() {
+        fmt.Printf("%s took %v\n", what, time.Since(start))
+    }
 }
