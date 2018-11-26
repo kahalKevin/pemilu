@@ -196,6 +196,7 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 		buf,
 		r.Form["phone"][0],
 		isWitness,
+		r.Form["address"][0],
 		handler.Filename,
 	}
 	addResult, _ := userService.AddPendukung(addPendukungRequest, tokenHeader)
