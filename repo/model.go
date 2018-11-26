@@ -22,6 +22,7 @@ type Pendukung struct {
 	Witness   bool   `json:"witness" db:"witness"`
 	Gender    bool   `json:"gender" db:"gender"`
 	Photo     string `json:"photo" db:"photo"`
+	Address   string `json:"address" db:"address"`
 }
 
 type PendukungFull struct {
@@ -38,6 +39,7 @@ type PendukungFull struct {
 	Gender    bool   `json:"gender" db:"gender"`
 	Photo     string `json:"photo" db:"photo"`
 	Status    bool   `json:"status" db:"status"`
+	Address   string `json:"address" db:"address"`
 }
 
 type PendukungPart struct {
@@ -54,6 +56,7 @@ type PendukungPart struct {
 	Kelurahan string `json:"kelurahan" db:"kelurahan"`
 	TPS       string `json:"tps" db:"tps"`
 	Timestamp string `json:"timestamp" db:"timestamp"`
+	Address   string `json:"address" db:"address"`
 }
 
 type Dukungan struct {

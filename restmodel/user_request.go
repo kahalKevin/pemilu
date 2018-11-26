@@ -26,6 +26,7 @@ type AddPendukungRequest struct {
 	Photo     *bytes.Buffer `json:"photo"`
 	Phone     string        `json:"phone"`
 	Witness   bool          `json:"witness"`
+	Address   string        `json:"address"`
 	FileName  string
 }
 
@@ -81,7 +82,8 @@ type Pendukung struct {
 	Witness   bool   `json:"witness"`
 	Gender    bool   `json:"gender"`
 	Status    bool   `json:"status"`
-	Timestamp string `json:"timestamp"`
+	Timestamp string `json:"timestamp"`	
+	Address   string `json:"address"`
 }
 
 type Site struct {

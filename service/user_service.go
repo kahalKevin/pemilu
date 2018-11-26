@@ -51,7 +51,7 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
-const urlImg string = ""
+const urlImg string = "http://solagratia.web.id/images/"
 
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
@@ -348,7 +348,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 
 func saveImage(photo *bytes.Buffer, filename string) {
 	file := photo.Bytes()
-	f, err := os.OpenFile("./gbr/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile("/var/www/web-sola-gratia-yii2/backend/web/images/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -377,6 +377,7 @@ func (s *userService) insertPendukung(sidalih3Response restmodel.Sidalih3Respons
 		request.Witness,
 		gender,
 		fileName,
+		request.Address,
 	}
 	_, errInsert := s.userRepo.InsertPendukung(newPendukung)
 	if errInsert != nil {
@@ -441,6 +442,7 @@ func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAll
 			part.Gender,
 			part.Status,
 			part.Timestamp,
+			part.Address,
 		}
 		dataKey := strings.Join(s, ";")
 		if dataValue, ok := allPendukung.Data[dataKey]; !ok {
