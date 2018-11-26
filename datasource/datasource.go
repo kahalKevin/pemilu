@@ -9,7 +9,7 @@ import (
 
 func InitConnection() *sqlx.DB {
 	log.Println("CONNECTING TO DATABASE")
-	db, err := sqlx.Connect("mysql", "root:gantengcommunity@(localhost:3306)/pemilu?parseTime=true")
+	db, err := sqlx.Connect("mysql", "root:root1234@(localhost:3306)/pemilu?parseTime=true")
 	if err != nil {
 		log.Fatalln("Failed to connect to database,    ", err)
 	}

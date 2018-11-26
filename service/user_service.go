@@ -51,7 +51,7 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
-const urlImg string = "http://solagratia.web.id/images/"
+const urlImg string = ""
 
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
@@ -348,7 +348,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 
 func saveImage(photo *bytes.Buffer, filename string) {
 	file := photo.Bytes()
-	f, err := os.OpenFile("/var/www/web-sola-gratia-yii2/backend/web/images/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile("./gbr/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println(err)
 		return
