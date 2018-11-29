@@ -31,16 +31,18 @@ type AddPendukungRequest struct {
 }
 
 type Response struct {
-	Result   bool   `json:"result"`
-	Role     string `json:"role"`
-	Username string `json:"username"`
-	Tingkat  string `json:"tingkat"`
+	Result    bool   `json:"result"`
+	Role      string `json:"role"`
+	Username  string `json:"username"`
+	Tingkat   string `json:"tingkat"`
+	AvatarUrl string `json:"avatarUrl"`
 }
 
 type ResponseGetUser struct {
-	IDCalon string `json:"idCalon"`
-	Name    string `json:"name"`
-	Tingkat string `json:"tingkat"`
+	IDCalon   string `json:"idCalon"`
+	Name      string `json:"name"`
+	Tingkat   string `json:"tingkat"`
+	AvatarUrl string `json:"avatarUrl"`
 }
 
 type ResponseGeneral struct {

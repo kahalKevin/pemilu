@@ -55,6 +55,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		loginResp.Role = loginResult.Data.Role
 		loginResp.Username = loginResult.Data.Username
 		loginResp.Tingkat = loginResult.Data.Tingkat
+		loginResp.AvatarUrl = loginResult.AvatarUrl
 	}
 
 	w.Header().Set("Access-Control-Expose-Headers", "token")
@@ -149,6 +150,7 @@ func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 		user.ID,
 		user.Name,
 		user.Tingkat,
+		user.AvatarUrl,
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(nameResponse)

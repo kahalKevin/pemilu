@@ -37,8 +37,9 @@ type Token struct {
 }
 
 type TokenData struct {
-	Data  Token
-	Token string
+	Data      Token
+	Token     string
+	AvatarUrl string
 }
 
 var mySigningKey []byte
@@ -114,6 +115,7 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 	tokenData = TokenData{
 		claims,
 		token,
+		urlImg + userData.AvatarUrl,
 	}
 	return
 }
@@ -185,6 +187,8 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 	userProfile, err = s.userRepo.FindByUsername(username)
 	if err != nil {
 		log.Println("Error at finding user's profile,	", err)
+	} else {
+		userProfile.AvatarUrl =  urlImg + userProfile.AvatarUrl
 	}
 
 	if "theboss" == userProfile.Username {
