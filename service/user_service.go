@@ -37,8 +37,9 @@ type Token struct {
 }
 
 type TokenData struct {
-	Data  Token
-	Token string
+	Data      Token
+	Token     string
+	AvatarUrl string
 }
 
 var mySigningKey []byte
@@ -51,7 +52,7 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
-const urlImg string = "http://solagratia.web.id/images/"
+const urlImg string = ""
 
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
@@ -114,11 +115,12 @@ func (s *userService) Login(username string, password string) (tokenData TokenDa
 	tokenData = TokenData{
 		claims,
 		token,
+		urlImg + userData.AvatarUrl,
 	}
 	return
 }
 
-func (s *userService) Register(userRegister repo.User, token string) (registered bool, err error) {
+func (s *userService) Register(userRegister restmodel.AddUserRequest, token string) (registered bool, err error) {
 	registered = false
 	if len(token) == 0 || len(userRegister.Username) == 0 {
 		err = errors.New("Must fill all field")
@@ -149,12 +151,40 @@ func (s *userService) Register(userRegister repo.User, token string) (registered
 		return
 	}
 
-	_, err = s.userRepo.InsertNewUser(userRegister)
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		log.Println("Fail to generate snowflake id,    ", err)
+		return
+	}
+
+	ID := uuid.Must(uuid.NewV4())
+	extension, errImage := getImageExtension(userRegister.FileName)
+	if errImage != nil {
+		err = errImage
+		log.Println(err)
+		return
+	}
+	generatedFileName := ID.String() + "." + extension
+
+	id := node.Generate().String()
+	registerData := repo.User{
+		ID:        id,
+		Name:      userRegister.Name,
+		Tingkat:   userRegister.Tingkat,
+		Username:  userRegister.Username,
+		Password:  userRegister.Password,
+		Role:      repo.CALON.String(),
+		AvatarUrl: generatedFileName,
+	}
+
+	_, err = s.userRepo.InsertNewUser(registerData)
+
 	if err != nil {
 		log.Println("Failed registering,    ", err)
 		return
 	} else {
 		registered = true
+		go saveImage(userRegister.AvatarUrl, generatedFileName)
 	}
 
 	return
@@ -185,6 +215,8 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 	userProfile, err = s.userRepo.FindByUsername(username)
 	if err != nil {
 		log.Println("Error at finding user's profile,	", err)
+	} else {
+		userProfile.AvatarUrl =  urlImg + userProfile.AvatarUrl
 	}
 
 	if "theboss" == userProfile.Username {
@@ -348,7 +380,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 
 func saveImage(photo *bytes.Buffer, filename string) {
 	file := photo.Bytes()
-	f, err := os.OpenFile("/var/www/web-sola-gratia-yii2/backend/web/images/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile("./gbr/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println(err)
 		return
