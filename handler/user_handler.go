@@ -14,7 +14,6 @@ import (
 	"restmodel"
 	"service"
 
-	"github.com/bwmarrin/snowflake"
 	"github.com/gorilla/mux"
 )
 
@@ -55,6 +54,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		loginResp.Role = loginResult.Data.Role
 		loginResp.Username = loginResult.Data.Username
 		loginResp.Tingkat = loginResult.Data.Tingkat
+		loginResp.AvatarUrl = loginResult.AvatarUrl
 	}
 
 	w.Header().Set("Access-Control-Expose-Headers", "token")
@@ -72,30 +72,35 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	tokenHeader := r.Header.Get("token")
-	body, _ := ioutil.ReadAll(io.LimitReader(r.Body, 5000))
 
-	var addUserRequest restmodel.AddUserRequest
-	json.Unmarshal(body, &addUserRequest)
+	var threshold int64
+	// 8MB
+	threshold = 1 << 23
 
-	node, err := snowflake.NewNode(1)
+	r.ParseMultipartForm(threshold)
+	file, handler, err := r.FormFile("avatarUrl")
 	if err != nil {
-		log.Println("Fail to generate snowflake id,    ", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, file); err != nil {
+		w.WriteHeader(http.StatusNotAcceptable)
 		return
 	}
 
-	id := node.Generate().String()
-
-	userRegister := repo.User{
-		ID:       id,
-		Name:     addUserRequest.Name,
-		Tingkat:  addUserRequest.Tingkat,
-		Username: addUserRequest.Username,
-		Password: addUserRequest.Password,
-		Role:     repo.CALON.String(),
+	addUserRequest := restmodel.AddUserRequest{
+		r.Form["name"][0],
+		r.Form["tingkat"][0],
+		r.Form["username"][0],
+		r.Form["password"][0],
+		buf,
+		handler.Filename,		
 	}
 
-	registerResult, err := userService.Register(userRegister, tokenHeader)
+	registerResult, err := userService.Register(addUserRequest, tokenHeader)
 	if err != nil {
 		log.Println("failed to register,    ", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -149,6 +154,7 @@ func GetNameHandler(w http.ResponseWriter, r *http.Request) {
 		user.ID,
 		user.Name,
 		user.Tingkat,
+		user.AvatarUrl,
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(nameResponse)

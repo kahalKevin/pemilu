@@ -1,12 +1,13 @@
 package repo
 
 type User struct {
-	ID       string `json:"id" db:"id"`
-	Name     string `json:"name" db:"name"`
-	Tingkat  string `json:"tingkat" db:"tingkat"`
-	Username string `json:"username" db:"username"`
-	Password string `json:"password" db:"password"`
-	Role     string `json:"role" db:"role"`
+	ID        string `json:"id" db:"id"`
+	Name      string `json:"name" db:"name"`
+	Tingkat   string `json:"tingkat" db:"tingkat"`
+	Username  string `json:"username" db:"username"`
+	Password  string `json:"password" db:"password"`
+	Role      string `json:"role" db:"role"`
+	AvatarUrl string `json:"avatarUrl" db:"avatarUrl"`
 }
 
 type Pendukung struct {

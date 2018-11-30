@@ -13,10 +13,12 @@ type ChangePasswordRequest struct {
 }
 
 type AddUserRequest struct {
-	Name     string `json:"name"`
-	Tingkat  string `json:"tingkat"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Name      string `json:"name"`
+	Tingkat   string `json:"tingkat"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	AvatarUrl *bytes.Buffer `json:"avatarUrl"`
+	FileName  string
 }
 
 type AddPendukungRequest struct {
@@ -31,16 +33,18 @@ type AddPendukungRequest struct {
 }
 
 type Response struct {
-	Result   bool   `json:"result"`
-	Role     string `json:"role"`
-	Username string `json:"username"`
-	Tingkat  string `json:"tingkat"`
+	Result    bool   `json:"result"`
+	Role      string `json:"role"`
+	Username  string `json:"username"`
+	Tingkat   string `json:"tingkat"`
+	AvatarUrl string `json:"avatarUrl"`
 }
 
 type ResponseGetUser struct {
-	IDCalon string `json:"idCalon"`
-	Name    string `json:"name"`
-	Tingkat string `json:"tingkat"`
+	IDCalon   string `json:"idCalon"`
+	Name      string `json:"name"`
+	Tingkat   string `json:"tingkat"`
+	AvatarUrl string `json:"avatarUrl"`
 }
 
 type ResponseGeneral struct {
