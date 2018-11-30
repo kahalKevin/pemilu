@@ -13,10 +13,12 @@ type ChangePasswordRequest struct {
 }
 
 type AddUserRequest struct {
-	Name     string `json:"name"`
-	Tingkat  string `json:"tingkat"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Name      string `json:"name"`
+	Tingkat   string `json:"tingkat"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	AvatarUrl *bytes.Buffer `json:"avatarUrl"`
+	FileName  string
 }
 
 type AddPendukungRequest struct {

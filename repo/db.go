@@ -54,7 +54,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.findAtPendukung = r.MustPrepareStmt("SELECT * FROM Pendukung WHERE nik=?")
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
 	r.findPendukungByCalon = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, timestamp, address from Pendukung p inner join Dukungan d on p.nik=d.nik where idCalon=?")
-	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role) VALUES (:id, :name, :tingkat, :username, :password, :role)")
+	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role, avatarUrl) VALUES (:id, :name, :tingkat, :username, :password, :role, :avatarUrl)")
 	r.insertDukungan = r.MustPrepareNamedStmt("INSERT INTO Dukungan (id, idCalon, nik, tingkat, status, timestamp) VALUES (:id, :idCalon, :nik, :tingkat, :status, :timestamp)")
 	r.insertPendukung = r.MustPrepareNamedStmt("INSERT INTO Pendukung (id, name, nik, provinsi, kabupaten, kecamatan, kelurahan, tps, phone, witness, gender, photo, address) VALUES (:id, :name, :nik, :provinsi, :kabupaten, :kecamatan, :kelurahan, :tps, :phone, :witness, :gender, :photo, :address)")
 	r.confirmDukungan = r.MustPrepareStmt("UPDATE Dukungan SET status=true WHERE nik=? and tingkat=?")
