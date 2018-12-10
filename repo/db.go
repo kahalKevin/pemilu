@@ -9,22 +9,23 @@ import (
 )
 
 type userRepository struct {
-	conn                  *sqlx.DB
-	findIDStmt            *sqlx.Stmt
-	findAtDukungan        *sqlx.Stmt
-	findAtPendukung       *sqlx.Stmt
-	insertDukungan        *sqlx.NamedStmt
-	insertPendukung       *sqlx.NamedStmt
-	findUsrnameStmt       *sqlx.Stmt
-	findPendukungByCalon  *sqlx.Stmt
-	insertUser            *sqlx.NamedStmt
-	confirmDukungan       *sqlx.Stmt
-	deleteDukungan        *sqlx.Stmt
-	getPendukungFull      *sqlx.Stmt
-	getUsers              *sqlx.Stmt
-	changePassword        *sqlx.Stmt
-	deleteUser            *sqlx.Stmt
-	deleteDukunganByCalon *sqlx.Stmt
+	conn                      *sqlx.DB
+	findIDStmt                *sqlx.Stmt
+	findAtDukungan            *sqlx.Stmt
+	findAtPendukung           *sqlx.Stmt
+	insertDukungan            *sqlx.NamedStmt
+	insertPendukung           *sqlx.NamedStmt
+	findUsrnameStmt           *sqlx.Stmt
+	findPendukungByCalon      *sqlx.Stmt
+	findPendukungByCalonLimit *sqlx.Stmt
+	insertUser                *sqlx.NamedStmt
+	confirmDukungan           *sqlx.Stmt
+	deleteDukungan            *sqlx.Stmt
+	getPendukungFull          *sqlx.Stmt
+	getUsers                  *sqlx.Stmt
+	changePassword            *sqlx.Stmt
+	deleteUser                *sqlx.Stmt
+	deleteDukunganByCalon     *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -54,6 +55,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	r.findAtPendukung = r.MustPrepareStmt("SELECT * FROM Pendukung WHERE nik=?")
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
 	r.findPendukungByCalon = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, timestamp, address from Pendukung p inner join Dukungan d on p.nik=d.nik where idCalon=?")
+	r.findPendukungByCalonLimit = r.MustPrepareStmt("select p.id, p.nik, name, phone, witness, gender, status, provinsi, kabupaten, kecamatan, kelurahan, tps, timestamp, address from Pendukung p inner join Dukungan d on p.nik=d.nik where idCalon=? and timestamp>=? and timestamp<=?")
 	r.insertUser = r.MustPrepareNamedStmt("INSERT INTO User (id, name, tingkat, username, password, role, avatarUrl) VALUES (:id, :name, :tingkat, :username, :password, :role, :avatarUrl)")
 	r.insertDukungan = r.MustPrepareNamedStmt("INSERT INTO Dukungan (id, idCalon, nik, tingkat, status, timestamp) VALUES (:id, :idCalon, :nik, :tingkat, :status, :timestamp)")
 	r.insertPendukung = r.MustPrepareNamedStmt("INSERT INTO Pendukung (id, name, nik, provinsi, kabupaten, kecamatan, kelurahan, tps, phone, witness, gender, photo, address) VALUES (:id, :name, :nik, :provinsi, :kabupaten, :kecamatan, :kelurahan, :tps, :phone, :witness, :gender, :photo, :address)")
@@ -164,6 +166,14 @@ func (db *userRepository) FindByUsername(usrname string) (usr User, err error) {
 
 func (db *userRepository) FindPendukungByCalon(idCalon string) (pendukungPart []PendukungPart, err error) {
 	err = db.findPendukungByCalon.Select(&pendukungPart, idCalon)
+	if err != nil {
+		log.Println("Error at finding pendukung by calon,    ", err)
+	}
+	return
+}
+
+func (db *userRepository) FindPendukungByCalonAndLimit(idCalon, start, end string) (pendukungPart []PendukungPart, err error) {
+	err = db.findPendukungByCalonLimit.Select(&pendukungPart, idCalon, start, end)
 	if err != nil {
 		log.Println("Error at finding pendukung by calon,    ", err)
 	}

@@ -97,7 +97,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		r.Form["username"][0],
 		r.Form["password"][0],
 		buf,
-		handler.Filename,		
+		handler.Filename,
 	}
 
 	registerResult, err := userService.Register(addUserRequest, tokenHeader)
@@ -219,8 +219,17 @@ func GetPendukungsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	start := ""
+	end := ""
 	tokenHeader := r.Header.Get("token")
-	user, _ := userService.GetPendukungs(tokenHeader)
+	keys, ok := r.URL.Query()["start"]
+	keys2, ok2 := r.URL.Query()["end"]
+	if (ok && len(keys[0]) >= 1) && (ok2 && len(keys2[0]) >= 1) {
+		start = keys[0]
+		end = keys2[0]
+	}
+
+	user, _ := userService.GetPendukungs(tokenHeader, start, end)
 	json.NewEncoder(w).Encode(user)
 }
 

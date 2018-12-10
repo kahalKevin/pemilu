@@ -13,10 +13,10 @@ type ChangePasswordRequest struct {
 }
 
 type AddUserRequest struct {
-	Name      string `json:"name"`
-	Tingkat   string `json:"tingkat"`
-	Username  string `json:"username"`
-	Password  string `json:"password"`
+	Name      string        `json:"name"`
+	Tingkat   string        `json:"tingkat"`
+	Username  string        `json:"username"`
+	Password  string        `json:"password"`
 	AvatarUrl *bytes.Buffer `json:"avatarUrl"`
 	FileName  string
 }
@@ -86,7 +86,7 @@ type Pendukung struct {
 	Witness   bool   `json:"witness"`
 	Gender    bool   `json:"gender"`
 	Status    bool   `json:"status"`
-	Timestamp string `json:"timestamp"`	
+	Timestamp string `json:"timestamp"`
 	Address   string `json:"address"`
 }
 
@@ -104,18 +104,18 @@ type GetAllPendukungResponse struct {
 }
 
 type LindungiHPMData struct {
-    TPS         string `json:"tps"`
-    KabKota     string `json:"namaKabKota"`
-    Kecamatan   string `json:"namaKecamatan"`
-    Kelurahan   string `json:"namaKelurahan"`
-    Nik         string `json:"nik"`
-    Nama        string `json:"nama"`
-    TempatLahir string `json:"tempat_lahir"`
-    Sex         string `json:"jenis_kelamin"`
-    Provinsi    string `json:"namaPropinsi"`
+	TPS         string `json:"tps"`
+	KabKota     string `json:"namaKabKota"`
+	Kecamatan   string `json:"namaKecamatan"`
+	Kelurahan   string `json:"namaKelurahan"`
+	Nik         string `json:"nik"`
+	Nama        string `json:"nama"`
+	TempatLahir string `json:"tempat_lahir"`
+	Sex         string `json:"jenis_kelamin"`
+	Provinsi    string `json:"namaPropinsi"`
 }
 
 type LindungiHPMResponse struct {
-    Message    string          `json:"message"`
-    Data       LindungiHPMData `json:"data"`
+	Message string          `json:"message"`
+	Data    LindungiHPMData `json:"data"`
 }

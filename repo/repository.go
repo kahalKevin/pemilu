@@ -10,6 +10,7 @@ type UserRepository interface {
 	InsertPendukung(pendukung Pendukung) (bool, error)
 	FindByUsername(usrname string) (User, error)
 	FindPendukungByCalon(idCalon string) ([]PendukungPart, error)
+	FindPendukungByCalonAndLimit(idCalon, start, end string) ([]PendukungPart, error)
 	InsertNewUser(user User) (string, error)
 	ConfirmDukungan(nik string, tingkat string) (bool, error)
 	DeleteDukungan(nik string, tingkat string) (bool, error)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -9,9 +10,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-    "net/url"	
+	"net/url"
 	"os"
-	"crypto/tls"
 	"repo"
 	"restmodel"
 	"strconv"
@@ -52,7 +52,7 @@ func at(t time.Time, f func()) {
 	jwt.TimeFunc = time.Now
 }
 
-const urlImg string = ""
+const urlImg string = "http://solagratia.web.id/images/"
 
 // NewUserService create new instance of UserService implementation
 func NewUserService(userRepo repo.UserRepository) UserService {
@@ -216,7 +216,7 @@ func (s *userService) ViewProfile(username string) (userProfile repo.User, err e
 	if err != nil {
 		log.Println("Error at finding user's profile,	", err)
 	} else {
-		userProfile.AvatarUrl =  urlImg + userProfile.AvatarUrl
+		userProfile.AvatarUrl = urlImg + userProfile.AvatarUrl
 	}
 
 	if "theboss" == userProfile.Username {
@@ -380,7 +380,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 
 func saveImage(photo *bytes.Buffer, filename string) {
 	file := photo.Bytes()
-	f, err := os.OpenFile("./gbr/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile("/var/www/web-sola-gratia-yii2/backend/web/images/"+filename, os.O_WRONLY|os.O_CREATE, 0666)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -450,7 +450,7 @@ func (s *userService) DeleteUser(idCalon string, token string) (result bool, err
 	return
 }
 
-func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
+func (s *userService) GetPendukungs(token, start, end string) (allPendukung restmodel.GetAllPendukungResponse, err error) {
 	allPendukung.Data = make(map[string]restmodel.Site)
 	dataToken, errToken := validateToken(token)
 	if errToken != nil {
@@ -458,7 +458,15 @@ func (s *userService) GetPendukungs(token string) (allPendukung restmodel.GetAll
 		return
 	}
 	idCalon := dataToken.ID
-	pendukungPart, errGetByCalon := s.userRepo.FindPendukungByCalon(idCalon)
+
+	var pendukungPart []repo.PendukungPart
+	var errGetByCalon error
+	if len(start) < 1 {
+		pendukungPart, errGetByCalon = s.userRepo.FindPendukungByCalon(idCalon)
+	} else {
+		pendukungPart, errGetByCalon = s.userRepo.FindPendukungByCalonAndLimit(idCalon, start, end)
+	}
+
 	if errGetByCalon != nil {
 		err = errGetByCalon
 		return
@@ -507,7 +515,7 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 	req, _ := http.NewRequest("POST", "https://sidalih3.kpu.go.id/dppublik/dpsnik", bytes.NewBuffer(reqJson))
 	req.Header.Set("Accept", "application/json, text/plain, */*")
 	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
-	
+
 	clientReal := &http.Client{}
 	client := &http.Client{
 		CheckRedirect: func() func(req *http.Request, via []*http.Request) error {
@@ -526,9 +534,9 @@ func getSidalih3Data(nik string, name string) (sidalih3Response restmodel.Sidali
 	if errSidalih != nil {
 		var cookieName string
 		for _, cookie := range resp.Cookies() {
-		  cookieName = cookie.Name
-		  cookie := http.Cookie{Name: cookie.Name, Value: cookie.Value}
-		  req.AddCookie(&cookie)
+			cookieName = cookie.Name
+			cookie := http.Cookie{Name: cookie.Name, Value: cookie.Value}
+			req.AddCookie(&cookie)
 		}
 		egovCookie, _ := req.Cookie(cookieName)
 		if egovCookie == nil {
@@ -571,145 +579,144 @@ func getImageExtension(fileName string) (string, error) {
 }
 
 func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidalih3Response, err error) {
-    fail := make(chan uint32, 2)
-    success := make(chan restmodel.Sidalih3Response, 1)
+	fail := make(chan uint32, 2)
+	success := make(chan restmodel.Sidalih3Response, 1)
 
-    go getLPHMquick(nik, fail, success)
-    go getLHPMdata(nik, name, fail, success)
+	go getLPHMquick(nik, fail, success)
+	go getLHPMdata(nik, name, fail, success)
 
-    var failCount uint32
-    failCount = 0
-    for {
-        select {
-        case doom := <-fail:
-            failCount = failCount + doom
-            if(failCount == 2){
-            	err = errors.New("fail call LHPM")
-                return
-            }
-        case bless := <-success:
-        	dataResponse = bless
-            return
-        }
-    }
+	var failCount uint32
+	failCount = 0
+	for {
+		select {
+		case doom := <-fail:
+			failCount = failCount + doom
+			if failCount == 2 {
+				err = errors.New("fail call LHPM")
+				return
+			}
+		case bless := <-success:
+			dataResponse = bless
+			return
+		}
+	}
 }
 
-func getLPHMquick (nik string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
-	defer elapsed("getLPHMquick")()	
+func getLPHMquick(nik string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
+	defer elapsed("getLPHMquick")()
 	var dataResponse restmodel.Sidalih3Response
 	var err error
-    apiUrl := "https://kmbmicro.xyz"
-    resource := "experiment/pemilu2019.php/"    
-    u, _ := url.ParseRequestURI(apiUrl)
-    u.Path = resource
-    urlStr := u.String()
+	apiUrl := "https://kmbmicro.xyz"
+	resource := "experiment/pemilu2019.php/"
+	u, _ := url.ParseRequestURI(apiUrl)
+	u.Path = resource
+	urlStr := u.String()
 
-    client := &http.Client{}   
+	client := &http.Client{}
 
-    req, _ := http.NewRequest("GET", urlStr, nil)
+	req, _ := http.NewRequest("GET", urlStr, nil)
 
-    q := req.URL.Query()
-    q.Add("nik", nik)
-    req.URL.RawQuery = q.Encode()
+	q := req.URL.Query()
+	q.Add("nik", nik)
+	req.URL.RawQuery = q.Encode()
 
-    resp, err := client.Do(req)
-    defer resp.Body.Close()    
-    if(err!=nil){
-    	fail <- 1
-        return
-    }
-    var respData restmodel.LindungiHPMResponse
-    body, _ := ioutil.ReadAll(resp.Body)
-    json.Unmarshal(body, &respData)
-    if(respData.Message != "success"){
-        fail <- 1
-        return
-    } else {
-        dataResponse.NIK = nik
-        dataResponse.Nama = respData.Data.Nama
-        dataResponse.TPS = respData.Data.TPS
-        dataResponse.Gender = respData.Data.Sex
-        dataResponse.Kelurahan = respData.Data.Kelurahan
-        dataResponse.Kecamatan = respData.Data.Kecamatan
-        dataResponse.Kabupaten = respData.Data.KabKota
-        dataResponse.Provinsi = respData.Data.Provinsi
-        fmt.Println("GET FROM kmbmicro.xyz")
-    }
-    success <- dataResponse
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		fail <- 1
+		return
+	}
+	var respData restmodel.LindungiHPMResponse
+	body, _ := ioutil.ReadAll(resp.Body)
+	json.Unmarshal(body, &respData)
+	if respData.Message != "success" {
+		fail <- 1
+		return
+	} else {
+		dataResponse.NIK = nik
+		dataResponse.Nama = respData.Data.Nama
+		dataResponse.TPS = respData.Data.TPS
+		dataResponse.Gender = respData.Data.Sex
+		dataResponse.Kelurahan = respData.Data.Kelurahan
+		dataResponse.Kecamatan = respData.Data.Kecamatan
+		dataResponse.Kabupaten = respData.Data.KabKota
+		dataResponse.Provinsi = respData.Data.Provinsi
+		fmt.Println("GET FROM kmbmicro.xyz")
+	}
+	success <- dataResponse
 }
-
 
 func getLHPMdata(nik string, name string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
 	defer elapsed("getLHPMdata")()
 	var dataResponse restmodel.Sidalih3Response
 	var err error
-    apiUrl := "https://lindungihakpilihmu.kpu.go.id"
-    resource := "/index.php/dpt/proses_ceknik/"
-    data := url.Values{}
-    data.Set("nik", nik)
-    data.Add("nama", name)
+	apiUrl := "https://lindungihakpilihmu.kpu.go.id"
+	resource := "/index.php/dpt/proses_ceknik/"
+	data := url.Values{}
+	data.Set("nik", nik)
+	data.Add("nama", name)
 
-    failedSign := "message:failed"
-    dataSign := "data:{"
-    u, _ := url.ParseRequestURI(apiUrl)
-    u.Path = resource
-    urlStr := u.String()
+	failedSign := "message:failed"
+	dataSign := "data:{"
+	u, _ := url.ParseRequestURI(apiUrl)
+	u.Path = resource
+	urlStr := u.String()
 
-    tr := &http.Transport{
-        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-    }
-    client := &http.Client{Transport: tr}   
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
-    r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
-    r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-    r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+	r, _ := http.NewRequest("POST", urlStr, strings.NewReader(data.Encode())) // URL-encoded payload
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-    resp, err := client.Do(r)
-    defer resp.Body.Close()    
-    if(err!=nil){
-    	fail <- 1
-        return
-    }
+	resp, err := client.Do(r)
+	defer resp.Body.Close()
+	if err != nil {
+		fail <- 1
+		return
+	}
 
-    body, _ := ioutil.ReadAll(resp.Body)
-    bodyString := string(body)
-    bodyString = strings.Replace(bodyString, "\\\"", "", -1)
-    bodyString = strings.Replace(bodyString, "\\", "", -1)
-    bodyString = strings.Replace(bodyString, "\"", "", -1)
-    if(strings.Contains(bodyString, failedSign)){
-        fail <- 1
-        return
-    } else {
-        i := strings.Index(bodyString, dataSign) + 6
-        data := bodyString[i:len(bodyString)-2]
-        dataArray := strings.Split(data, ",")
-        dataResponse.NIK = nik
-        for _, part := range dataArray {
-            content := strings.Split(part, ":")
-            if("nama" == content[0]){
-                dataResponse.Nama = content[1]
-            } else if("tps" == content[0]){
-                dataResponse.TPS = content[1]
-            } else if("jenis_kelamin" == content[0]){
-                dataResponse.Gender = content[1]
-            } else if("namaKelurahan" == content[0]){
-                dataResponse.Kelurahan = content[1]
-            } else if("namaKecamatan" == content[0]){
-                dataResponse.Kecamatan = content[1]
-            } else if("namaKabKota" == content[0]){
-                dataResponse.Kabupaten = content[1]
-            } else if("namaPropinsi" == content[0]){
-                dataResponse.Provinsi = content[1]
-            }
-        }
-        fmt.Println("GET FROM lindungihakpilihmu.kpu.go.id")
-    }
-    success <- dataResponse
+	body, _ := ioutil.ReadAll(resp.Body)
+	bodyString := string(body)
+	bodyString = strings.Replace(bodyString, "\\\"", "", -1)
+	bodyString = strings.Replace(bodyString, "\\", "", -1)
+	bodyString = strings.Replace(bodyString, "\"", "", -1)
+	if strings.Contains(bodyString, failedSign) {
+		fail <- 1
+		return
+	} else {
+		i := strings.Index(bodyString, dataSign) + 6
+		data := bodyString[i : len(bodyString)-2]
+		dataArray := strings.Split(data, ",")
+		dataResponse.NIK = nik
+		for _, part := range dataArray {
+			content := strings.Split(part, ":")
+			if "nama" == content[0] {
+				dataResponse.Nama = content[1]
+			} else if "tps" == content[0] {
+				dataResponse.TPS = content[1]
+			} else if "jenis_kelamin" == content[0] {
+				dataResponse.Gender = content[1]
+			} else if "namaKelurahan" == content[0] {
+				dataResponse.Kelurahan = content[1]
+			} else if "namaKecamatan" == content[0] {
+				dataResponse.Kecamatan = content[1]
+			} else if "namaKabKota" == content[0] {
+				dataResponse.Kabupaten = content[1]
+			} else if "namaPropinsi" == content[0] {
+				dataResponse.Provinsi = content[1]
+			}
+		}
+		fmt.Println("GET FROM lindungihakpilihmu.kpu.go.id")
+	}
+	success <- dataResponse
 }
 
 func elapsed(what string) func() {
-    start := time.Now()
-    return func() {
-        fmt.Printf("%s took %v\n", what, time.Since(start))
-    }
+	start := time.Now()
+	return func() {
+		fmt.Printf("%s took %v\n", what, time.Since(start))
+	}
 }
