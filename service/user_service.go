@@ -757,10 +757,10 @@ func elapsed(what string) func() {
 	}
 }
 
-func recoverKpuCall(funcName string, fail chan<- uint32){
+func recoverKpuCall(funcName string, fail chan<- uint32) {
 	r := recover()
-    if r != nil {
-    	fmt.Println("Panic on Call" + funcName)
-    	fail <- 1
-    }
+	if r != nil {
+		fmt.Println("Panic on Call" + funcName)
+		fail <- 1
+	}
 }
