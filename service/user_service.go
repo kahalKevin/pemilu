@@ -584,6 +584,7 @@ func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidali
 
 	go getLPHMquick(nik, fail, success)
 	go getLHPMdata(nik, name, fail, success)
+	go getSidalih3DataV2(nik, name, fail, success)
 
 	var failCount uint32
 	failCount = 0
@@ -591,7 +592,7 @@ func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidali
 		select {
 		case doom := <-fail:
 			failCount = failCount + doom
-			if failCount == 2 {
+			if failCount >= 3 {
 				err = errors.New("fail call LHPM")
 				return
 			}
@@ -604,6 +605,7 @@ func pemiluDataAggregate(nik string, name string) (dataResponse restmodel.Sidali
 
 func getLPHMquick(nik string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
 	defer elapsed("getLPHMquick")()
+	defer recoverKpuCall("kmbmicro", fail)
 	var dataResponse restmodel.Sidalih3Response
 	var err error
 	apiUrl := "https://kmbmicro.xyz"
@@ -621,11 +623,11 @@ func getLPHMquick(nik string, fail chan<- uint32, success chan<- restmodel.Sidal
 	req.URL.RawQuery = q.Encode()
 
 	resp, err := client.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		fail <- 1
 		return
 	}
+	defer resp.Body.Close()
 	var respData restmodel.LindungiHPMResponse
 	body, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(body, &respData)
@@ -648,6 +650,7 @@ func getLPHMquick(nik string, fail chan<- uint32, success chan<- restmodel.Sidal
 
 func getLHPMdata(nik string, name string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
 	defer elapsed("getLHPMdata")()
+	defer recoverKpuCall("lindungihakpilihmu", fail)
 	var dataResponse restmodel.Sidalih3Response
 	var err error
 	apiUrl := "https://lindungihakpilihmu.kpu.go.id"
@@ -672,12 +675,11 @@ func getLHPMdata(nik string, name string, fail chan<- uint32, success chan<- res
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
 	resp, err := client.Do(r)
-	defer resp.Body.Close()
 	if err != nil {
 		fail <- 1
 		return
 	}
-
+	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	bodyString := string(body)
 	bodyString = strings.Replace(bodyString, "\\\"", "", -1)
@@ -714,9 +716,51 @@ func getLHPMdata(nik string, name string, fail chan<- uint32, success chan<- res
 	success <- dataResponse
 }
 
+func getSidalih3DataV2(nik string, name string, fail chan<- uint32, success chan<- restmodel.Sidalih3Response) {
+	defer elapsed("getSidalih3DataV2")()
+	defer recoverKpuCall("sidalih3", fail)
+	sidalih3Request := restmodel.Sidalih3Request{
+		"search",
+		nik,
+		name,
+	}
+	reqJson, _ := json.Marshal(sidalih3Request)
+	req, _ := http.NewRequest("POST", "https://sidalih3.kpu.go.id/dppublik/dpsnik", bytes.NewBuffer(reqJson))
+	req.Header.Set("Accept", "application/json, text/plain, */*")
+	req.Header.Set("Content-Type", "application/json;charset=UTF-8")
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, errSidalih := client.Do(req)
+	if errSidalih != nil {
+		fail <- 1
+		return
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	var sidalih3Response restmodel.Sidalih3Response
+	json.Unmarshal(body, &sidalih3Response)
+	if len(sidalih3Response.NIK) <= 0 {
+		fail <- 1
+		return
+	}
+	success <- sidalih3Response
+}
+
 func elapsed(what string) func() {
 	start := time.Now()
 	return func() {
 		fmt.Printf("%s took %v\n", what, time.Since(start))
 	}
+}
+
+func recoverKpuCall(funcName string, fail chan<- uint32){
+	r := recover()
+    if r != nil {
+    	fmt.Println("Panic on Call" + funcName)
+    	fail <- 1
+    }
 }
