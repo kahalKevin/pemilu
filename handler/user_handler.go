@@ -169,26 +169,26 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 
 	tokenHeader := r.Header.Get("token")
 	var threshold int64
-	// 7 << 20 to make 7MB
+	// // 7 << 20 to make 7MB
 	threshold = 7 << 20
 	r.ParseMultipartForm(threshold)
-	file, handler, err := r.FormFile("uploadfile")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
+	// file, handler, err := r.FormFile("uploadfile")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return
+	// }
+	// defer file.Close()
 
-	if handler.Size > threshold {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
+	// if handler.Size > threshold {
+	// 	w.WriteHeader(http.StatusNotAcceptable)
+	// 	return
+	// }
 
 	buf := bytes.NewBuffer(nil)
-	if _, err := io.Copy(buf, file); err != nil {
-		w.WriteHeader(http.StatusNotAcceptable)
-		return
-	}
+	// if _, err := io.Copy(buf, file); err != nil {
+	// 	w.WriteHeader(http.StatusNotAcceptable)
+	// 	return
+	// }
 
 	isWitness := false
 	if "1" == r.Form["witness"][0] {
@@ -203,7 +203,7 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 		r.Form["phone"][0],
 		isWitness,
 		r.Form["address"][0],
-		handler.Filename,
+		"default.jpg",
 	}
 	addResult, _ := userService.AddPendukung(addPendukungRequest, tokenHeader)
 	var addResponse restmodel.ResponseGeneral
