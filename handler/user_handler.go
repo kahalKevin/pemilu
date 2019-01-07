@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"datasource"
-	"liliput"
 	"repo"
 	"restmodel"
 	"service"
@@ -189,24 +188,6 @@ func AddPendukungHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(buf, file); err != nil {
 		w.WriteHeader(http.StatusNotAcceptable)
 		return
-	}
-
-	// 1 << 19 to make 512kB
-	var maxImageSize int64
-	maxImageSize = 1 << 19
-	if handler.Size > maxImageSize {
-		reduceFile := bytes.NewBuffer(nil)
-		byteReduce, err := liliput.ReduceSize(buf.Bytes())
-		if err != nil {
-			w.WriteHeader(http.StatusNotAcceptable)
-			return
-		}
-		_, errN := reduceFile.Write(byteReduce)
-		if errN != nil {
-			w.WriteHeader(http.StatusNotAcceptable)
-			return
-		}
-		buf = reduceFile
 	}
 
 	isWitness := false

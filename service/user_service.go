@@ -347,7 +347,7 @@ func (s *userService) AddPendukung(request restmodel.AddPendukungRequest, token 
 		}
 		generatedFileName := ID.String() + "." + extension
 		go s.insertPendukung(dataPendukung, request, generatedFileName)
-		go saveImage(request.Photo, generatedFileName)
+		// go saveImage(request.Photo, generatedFileName)
 	}
 
 	nodeDukungan, errSFDukungan := snowflake.NewNode(1)
