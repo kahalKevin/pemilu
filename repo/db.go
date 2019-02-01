@@ -26,7 +26,7 @@ type userRepository struct {
 	changePassword            *sqlx.Stmt
 	deleteUser                *sqlx.Stmt
 	deleteDukunganByCalon     *sqlx.Stmt
-	checker	                  *sqlx.Stmt	
+	checker                   *sqlx.Stmt
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
