@@ -26,6 +26,7 @@ type userRepository struct {
 	changePassword            *sqlx.Stmt
 	deleteUser                *sqlx.Stmt
 	deleteDukunganByCalon     *sqlx.Stmt
+	checker	                  *sqlx.Stmt	
 }
 
 func (db *userRepository) MustPrepareStmt(query string) *sqlx.Stmt {
@@ -51,6 +52,7 @@ func NewRepository(db *sqlx.DB) UserRepository {
 	log.Println("NEW USER REPOSITORY")
 	r := userRepository{conn: db}
 	r.findIDStmt = r.MustPrepareStmt("SELECT * FROM User WHERE id=?")
+	r.checker = r.MustPrepareStmt("SELECT * FROM Dukungan WHERE idCalon=? AND nik=?")
 	r.findAtDukungan = r.MustPrepareStmt("SELECT * FROM Dukungan WHERE nik =? AND tingkat=?")
 	r.findAtPendukung = r.MustPrepareStmt("SELECT * FROM Pendukung WHERE nik=?")
 	r.findUsrnameStmt = r.MustPrepareStmt("SELECT * FROM User WHERE username=?")
@@ -151,6 +153,11 @@ func (db *userRepository) FindByID(id string) (usr User, err error) {
 		log.Printf("ID: %v , doesn't exist", id)
 		log.Println(err)
 	}
+	return
+}
+
+func (db *userRepository) Checker(idCalon string, nik string) (dukungan Dukungan, err error) {
+	err = db.checker.Get(&dukungan, idCalon, nik)
 	return
 }
 

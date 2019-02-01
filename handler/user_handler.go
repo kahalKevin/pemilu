@@ -295,6 +295,25 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(fullData)
 }
 
+func Checker(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	setupResponse(&w)
+	if (*r).Method == "OPTIONS" {
+		return
+	}
+
+	calegs, _ := r.URL.Query()["caleg"]
+	caleg := calegs[0]
+
+	niks, _ := r.URL.Query()["nik"]
+	nik := niks[0]
+
+	result := userService.Checker(caleg, nik)
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+}
+
 func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	setupResponse(&w)

@@ -19,4 +19,5 @@ type UserRepository interface {
 	ChangePassword(username string, newPassword string) (bool, error)
 	DeleteUser(idCalon string) (bool, error)
 	DeleteDukunganByCalon(idCalon string) (bool, error)
+	Checker(idCalon string, nik string) (Dukungan, error)
 }
